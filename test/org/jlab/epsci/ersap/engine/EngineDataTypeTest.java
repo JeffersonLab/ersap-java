@@ -27,7 +27,7 @@ public class EngineDataTypeTest {
     @Test
     public void testIntegerSerializer() throws Exception {
         EngineDataType dt = EngineDataType.SINT32;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         ByteBuffer b = s.write(18);
         Integer d = (Integer) s.read(b);
@@ -38,7 +38,7 @@ public class EngineDataTypeTest {
     @Test
     public void testFloatingPointSerializer() throws Exception {
         EngineDataType dt = EngineDataType.DOUBLE;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         ByteBuffer b = s.write(78.98);
         Double d = (Double) s.read(b);
@@ -49,7 +49,7 @@ public class EngineDataTypeTest {
     @Test
     public void testStringSerializer() throws Exception {
         EngineDataType dt = EngineDataType.STRING;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         ByteBuffer b = s.write("master of puppets");
         String d = (String) s.read(b);
@@ -60,7 +60,7 @@ public class EngineDataTypeTest {
     @Test
     public void testIntegerArraySerializer() throws Exception {
         EngineDataType dt = EngineDataType.ARRAY_SINT32;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         Integer[] v = new Integer[] {4, 5, 6};
         ByteBuffer b = s.write(v);
@@ -73,7 +73,7 @@ public class EngineDataTypeTest {
     @SuppressWarnings("unchecked")
     public void testFloatingPointArraySerializer() throws Exception {
         EngineDataType dt = EngineDataType.ARRAY_DOUBLE;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         Double[] v = new Double[] {4.1, 5.6};
         ByteBuffer b = s.write(v);
@@ -85,7 +85,7 @@ public class EngineDataTypeTest {
     @Test
     public void testStringArraySerializer() throws Exception {
         EngineDataType dt = EngineDataType.ARRAY_STRING;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         String[] v = new String[] {"Ride the Lightning",
                                    "Master of Puppets", "...And Justice for All"};
@@ -106,7 +106,7 @@ public class EngineDataTypeTest {
         builder.addSTRINGA("...And Justice for All");
 
         EngineDataType dt = EngineDataType.NATIVE_DATA;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         ByteBuffer b = s.write(builder.build());
         xMsgData d = (xMsgData) s.read(b);
@@ -139,7 +139,7 @@ public class EngineDataTypeTest {
 
 
         EngineDataType dt = EngineDataType.NATIVE_PAYLOAD;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         ByteBuffer b = s.write(payload.build());
         xMsgPayload p = (xMsgPayload) s.read(b);
@@ -158,7 +158,7 @@ public class EngineDataTypeTest {
         bb.order(ByteOrder.LITTLE_ENDIAN);
 
         EngineDataType dt = EngineDataType.BYTES;
-        ClaraSerializer s = dt.serializer();
+        ErsapSerializer s = dt.serializer();
 
         ByteBuffer b = s.write(bb);
         ByteBuffer d = (ByteBuffer) s.read(b);

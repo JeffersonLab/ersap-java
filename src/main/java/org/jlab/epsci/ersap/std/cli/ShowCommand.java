@@ -92,7 +92,7 @@ class ShowCommand extends BaseCommand {
     }
 
     private int showVersion() {
-        writer.println(VersionUtils.getClaraVersionFull());
+        writer.println(VersionUtils.getErsapVersionFull());
         return EXIT_SUCCESS;
     }
 

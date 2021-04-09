@@ -8,7 +8,7 @@ package org.jlab.epsci.ersap.base;
 
 import org.jlab.epsci.ersap.base.core.ErsapBase;
 import org.jlab.epsci.ersap.base.core.ErsapComponent;
-import org.jlab.epsci.ersap.base.ErsapQueries.ClaraQueryBuilder;
+import org.jlab.epsci.ersap.base.ErsapQueries.ErsapQueryBuilder;
 import org.jlab.epsci.ersap.base.ErsapSubscriptions.GlobalSubscriptionBuilder;
 import org.jlab.epsci.ersap.base.ErsapSubscriptions.ServiceSubscriptionBuilder;
 import org.jlab.epsci.ersap.engine.EngineDataType;
@@ -33,10 +33,10 @@ public class BaseOrchestrator implements AutoCloseable {
     //Set of user defined data types, that provide data specific serialization routines.
     private final Set<EngineDataType> dataTypes = new HashSet<>();
 
-    // Map of subscription objects. Key = Clara_component_canonical_name # topic_of_subscription
+    // Map of subscription objects. Key = Ersap_component_canonical_name # topic_of_subscription
     private final Map<String, xMsgSubscription> subscriptions = new HashMap<>();
 
-    // ClaraBase reference
+    // ErsapBase reference
     private ErsapBase base;
 
 
@@ -93,14 +93,14 @@ public class BaseOrchestrator implements AutoCloseable {
      * @param subPoolSize set the size of the pool for processing subscriptions on background
      */
     public BaseOrchestrator(String name, DpeName frontEnd, int subPoolSize) {
-        base = getClaraBase(name, frontEnd, subPoolSize);
+        base = getErsapBase(name, frontEnd, subPoolSize);
     }
 
     /**
      * Creates the internal base object.
      * It can be overridden to return a mock for testing purposes.
      */
-    ErsapBase getClaraBase(String name, DpeName frontEnd, int poolSize) {
+    ErsapBase getErsapBase(String name, DpeName frontEnd, int poolSize) {
         String localhost = ErsapUtil.localhost();
         ErsapComponent o = ErsapComponent.orchestrator(name, localhost, poolSize, "");
         ErsapComponent fe = ErsapComponent.dpe(frontEnd.canonicalName());
@@ -288,8 +288,8 @@ public class BaseOrchestrator implements AutoCloseable {
      *
      * @return a builder to create the desired query
      */
-    public ClaraQueryBuilder query() {
-        return new ClaraQueryBuilder(base, base.getFrontEnd());
+    public ErsapQueryBuilder query() {
+        return new ErsapQueryBuilder(base, base.getFrontEnd());
     }
 
 

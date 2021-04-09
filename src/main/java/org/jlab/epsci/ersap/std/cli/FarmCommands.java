@@ -367,7 +367,7 @@ final class FarmCommands {
             }
         }
 
-        private String getClaraCommand() {
+        private String getErsapCommand() {
             //vg
             StringBuilder sb = new StringBuilder();
             sb.append("mkdir ");
@@ -429,7 +429,7 @@ final class FarmCommands {
 //            return cmd.toString();
         }
 
-        private String getClaraCommandAffinity(String affinity,
+        private String getErsapCommandAffinity(String affinity,
                                                String session,
                                                String filesList) {
             String exec = FileUtils.ersapPathAffinity(
@@ -485,7 +485,7 @@ final class FarmCommands {
             return exec + " " + cmd.toString();
         }
 
-        private String getClaraCommandAffinityList(String[] affinities) {
+        private String getErsapCommandAffinityList(String[] affinities) {
             StringBuilder sb = new StringBuilder();
 
             //vg
@@ -524,7 +524,7 @@ final class FarmCommands {
                         }
                         writer.close();
 
-                        sb.append(getClaraCommandAffinity(affinities[i],
+                        sb.append(getErsapCommandAffinity(affinities[i],
                             runUtils.getSession() + "_" + i,
                             subFileList.toString())).append(" &\n");
 //                            subFileList.toString())).append("> /dev/null 2>&1 &\n");
@@ -545,7 +545,7 @@ final class FarmCommands {
             return sb.toString();
         }
 
-        private Path createClaraScript(Model model) throws IOException, TemplateException {
+        private Path createErsapScript(Model model) throws IOException, TemplateException {
             Path wrapper = getJobScript(".sh");
             try (PrintWriter printer = FileUtils.openOutputTextFile(wrapper, false)) {
                 processTemplate("farm-script.ftl", model, printer);
@@ -558,7 +558,7 @@ final class FarmCommands {
 
         private Path createJLabScript() throws IOException, TemplateException {
             Model model = createDataModel();
-            createClaraScript(model);
+            createErsapScript(model);
 
             Path jobFile = getJobScript(JLAB_SUB_EXT);
             try (PrintWriter printer = FileUtils.openOutputTextFile(jobFile, false)) {
@@ -569,7 +569,7 @@ final class FarmCommands {
 
         private Path createPbsScript() throws IOException, TemplateException {
             Model model = createDataModel();
-            createClaraScript(model);
+            createErsapScript(model);
 
             int diskKb = config.getInt(FARM_DISK) * 1024 * 1024;
             int time = config.getInt(FARM_TIME);
@@ -618,31 +618,31 @@ final class FarmCommands {
 
             String farmExclusive = config.getString(FARM_EXCLUSIVE);
             if (farmExclusive.equals("")) {
-                model.put("farm", "command", getClaraCommand());
+                model.put("farm", "command", getErsapCommand());
             } else {
                 switch (farmExclusive) {
                     case "farm18":
                         model.put("farm", "command",
-                            getClaraCommandAffinityList(FARM18_NUMAS));
+                            getErsapCommandAffinityList(FARM18_NUMAS));
                         break;
                     case "farm16":
                         model.put("farm", "command",
-                            getClaraCommandAffinityList(FARM16_NUMAS));
+                            getErsapCommandAffinityList(FARM16_NUMAS));
                         break;
                     case "farm14":
                         model.put("farm", "command",
-                            getClaraCommandAffinityList(FARM14_NUMAS));
+                            getErsapCommandAffinityList(FARM14_NUMAS));
                         break;
                     case "farm13":
                         model.put("farm", "command",
-                            getClaraCommandAffinityList(FARM13_NUMAS));
+                            getErsapCommandAffinityList(FARM13_NUMAS));
                         break;
                     case "qcd12s":
                         model.put("farm", "command",
-                            getClaraCommandAffinityList(QCD12S_NUMAS));
+                            getErsapCommandAffinityList(QCD12S_NUMAS));
                         break;
                     case "any":
-                        model.put("farm", "command", getClaraCommand());
+                        model.put("farm", "command", getErsapCommand());
                         break;
                     default:
                         break;

@@ -91,7 +91,7 @@ public final class Dpe extends AbstractActor {
         try {
             options.parse(args);
             if (options.hasVersion()) {
-                System.out.println(VersionUtils.getClaraVersionFull());
+                System.out.println(VersionUtils.getErsapVersionFull());
                 System.exit(0);
             }
             if (options.hasHelp()) {
@@ -525,7 +525,7 @@ public final class Dpe extends AbstractActor {
             System.out.println(" Session          = " + session);
         }
         System.out.println(" Start time       = " + ErsapUtil.getCurrentTime());
-        System.out.println(" Version          = " + VersionUtils.getClaraVersion());
+        System.out.println(" Version          = " + VersionUtils.getErsapVersion());
         System.out.println(" Lang             = Java");
         System.out.println(" Pool size        = " + base.getPoolSize());
         if (!base.getDescription().isEmpty()) {

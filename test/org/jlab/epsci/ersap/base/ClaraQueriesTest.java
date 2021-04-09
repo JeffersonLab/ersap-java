@@ -45,14 +45,14 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
-public class ClaraQueriesTest {
+public class ErsapQueriesTest {
 
     private static final xMsgRegistration.OwnerType TYPE = xMsgRegistration.OwnerType.SUBSCRIBER;
 
     private static TestData data;
 
     private ErsapBase base = base();
-    private ErsapQueries.ClaraQueryBuilder queryBuilder;
+    private ErsapQueries.ErsapQueryBuilder queryBuilder;
 
 
     private static class Data<T extends ErsapName> {
@@ -265,7 +265,7 @@ public class ClaraQueriesTest {
 
     @BeforeEach
     public void setup() throws Exception {
-        queryBuilder = new ErsapQueries.ClaraQueryBuilder(base, ErsapComponent.dpe());
+        queryBuilder = new ErsapQueries.ErsapQueryBuilder(base, ErsapComponent.dpe());
     }
 
 

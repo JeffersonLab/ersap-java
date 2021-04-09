@@ -67,7 +67,7 @@ public class JsonReportBuilder implements ExternalReport {
         dpeRegistration.put("session", dpeData.getSession());
         dpeRegistration.put("description", dpeData.getDescription());
         dpeRegistration.put("language", dpeData.getLang());
-        dpeRegistration.put("ersap_home", dpeData.getClaraHome());
+        dpeRegistration.put("ersap_home", dpeData.getErsapHome());
         dpeRegistration.put("n_cores", dpeData.getCoreCount());
         dpeRegistration.put("memory_size", dpeData.getMemorySize());
         dpeRegistration.put("start_time", dpeData.getStartTime());

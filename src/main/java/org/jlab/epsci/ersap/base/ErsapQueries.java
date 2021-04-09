@@ -330,12 +330,12 @@ public final class ErsapQueries {
     /**
      * Builds a request to query the ERSAP registration and runtime database.
      */
-    public static class ClaraQueryBuilder {
+    public static class ErsapQueryBuilder {
 
         private final ErsapBase base;
         private final ErsapComponent frontEnd;
 
-        ClaraQueryBuilder(ErsapBase base, ErsapComponent frontEnd) {
+        ErsapQueryBuilder(ErsapBase base, ErsapComponent frontEnd) {
             this.base = base;
             this.frontEnd = frontEnd;
         }

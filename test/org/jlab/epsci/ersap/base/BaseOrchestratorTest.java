@@ -359,7 +359,7 @@ public class BaseOrchestratorTest {
         }
 
         @Override
-        ErsapBase getClaraBase(String name, DpeName frontEnd, int poolSize) {
+        ErsapBase getErsapBase(String name, DpeName frontEnd, int poolSize) {
             return baseMock;
         }
     }

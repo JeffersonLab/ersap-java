@@ -91,14 +91,14 @@ public class OrchestratorPathsTest {
     }
 
     @Test
-    public void defaultInputDirIsInClaraHome() throws Exception {
+    public void defaultInputDirIsInErsapHome() throws Exception {
         OrchestratorPaths paths = new OrchestratorPaths.Builder(SIMPLE_LIST).build();
 
         assertThat(paths.inputDir, is(FileUtils.ersapPath("data", "input")));
     }
 
     @Test
-    public void defaultOutputDirIsInClaraHome() throws Exception {
+    public void defaultOutputDirIsInErsapHome() throws Exception {
         OrchestratorPaths paths = new OrchestratorPaths.Builder(SIMPLE_LIST).build();
 
         assertThat(paths.outputDir, is(FileUtils.ersapPath("data", "output")));

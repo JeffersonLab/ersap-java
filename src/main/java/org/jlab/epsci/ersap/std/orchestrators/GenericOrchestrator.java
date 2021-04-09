@@ -52,7 +52,7 @@ public final class GenericOrchestrator extends AbstractOrchestrator {
         try {
             cl.parse(args);
             if (cl.hasVersion()) {
-                System.out.println(VersionUtils.getClaraVersionFull());
+                System.out.println(VersionUtils.getErsapVersionFull());
                 System.exit(0);
             }
             if (cl.hasHelp()) {

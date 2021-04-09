@@ -116,7 +116,7 @@ public class EngineDataType {
     public static final EngineDataType NATIVE_PAYLOAD = buildPayload();
 
     private final String mimeType;
-    private final ClaraSerializer serializer;
+    private final ErsapSerializer serializer;
 
     /**
      * Creates a new user data type.
@@ -127,7 +127,7 @@ public class EngineDataType {
      * @param mimeType the name of this data-type
      * @param serializer the custom serializer for this data-type
      */
-    public EngineDataType(String mimeType, ClaraSerializer serializer) {
+    public EngineDataType(String mimeType, ErsapSerializer serializer) {
         Objects.requireNonNull(mimeType, "null mime-type");
         Objects.requireNonNull(serializer, "null serializer");
         if (mimeType.isEmpty()) {
@@ -171,7 +171,7 @@ public class EngineDataType {
      *
      * @return the serializer object
      */
-    public ClaraSerializer serializer() {
+    public ErsapSerializer serializer() {
         return serializer;
     }
 
@@ -220,7 +220,7 @@ public class EngineDataType {
     // checkstyle.on: MethodParamPad
 
 
-    private static class NativeSerializer implements ClaraSerializer {
+    private static class NativeSerializer implements ErsapSerializer {
 
         @Override
         public ByteBuffer write(Object data) throws ErsapException {
@@ -239,7 +239,7 @@ public class EngineDataType {
     }
 
 
-    private static class PayloadSerializer implements ClaraSerializer {
+    private static class PayloadSerializer implements ErsapSerializer {
 
         @Override
         public ByteBuffer write(Object data) throws ErsapException {
@@ -258,7 +258,7 @@ public class EngineDataType {
     }
 
 
-    private static class StringSerializer implements ClaraSerializer {
+    private static class StringSerializer implements ErsapSerializer {
 
         @Override
         public ByteBuffer write(Object data) throws ErsapException {
@@ -273,7 +273,7 @@ public class EngineDataType {
     }
 
 
-    private static class RawBytesSerializer implements ClaraSerializer {
+    private static class RawBytesSerializer implements ErsapSerializer {
 
         @Override
         public ByteBuffer write(Object data) throws ErsapException {
@@ -287,7 +287,7 @@ public class EngineDataType {
     }
 
 
-    private static class PrimitiveSerializer implements ClaraSerializer {
+    private static class PrimitiveSerializer implements ErsapSerializer {
 
         private final MimeType mimeType;
         private final NativeSerializer nativeSerializer = new NativeSerializer();

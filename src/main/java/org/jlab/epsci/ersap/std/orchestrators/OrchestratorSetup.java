@@ -8,7 +8,7 @@ package org.jlab.epsci.ersap.std.orchestrators;
 
 import org.jlab.epsci.ersap.base.DpeName;
 import org.jlab.epsci.ersap.base.error.ErsapException;
-import org.jlab.epsci.ersap.engine.ClaraSerializer;
+import org.jlab.epsci.ersap.engine.ErsapSerializer;
 import org.jlab.epsci.ersap.engine.EngineDataType;
 import org.json.JSONObject;
 
@@ -93,7 +93,7 @@ class OrchestratorSetup {
 
 
     private static EngineDataType dummyDataType(String mimeType) {
-        return new EngineDataType(mimeType, new ClaraSerializer() {
+        return new EngineDataType(mimeType, new ErsapSerializer() {
 
             @Override
             public ByteBuffer write(Object data) throws ErsapException {

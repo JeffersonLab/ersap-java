@@ -56,7 +56,7 @@ public class DpeReport extends BaseReport {
         return host;
     }
 
-    public String getClaraHome() {
+    public String getErsapHome() {
         return ersapHome;
     }
 

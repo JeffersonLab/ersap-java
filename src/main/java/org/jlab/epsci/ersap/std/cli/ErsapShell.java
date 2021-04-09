@@ -63,7 +63,7 @@ public final class ErsapShell implements AutoCloseable {
         ErsapShell.Builder builder = ErsapShell.newBuilder();
         if (args.length == 1) {
             if (args[0].equals("--version")) {
-                System.out.println(VersionUtils.getClaraVersionFull());
+                System.out.println(VersionUtils.getErsapVersionFull());
                 System.exit(0);
             }
             if (args[0].equals("--help")) {
@@ -387,7 +387,7 @@ public final class ErsapShell implements AutoCloseable {
 
 
     private void printWelcomeMessage(PrintWriter writer) {
-        String version = VersionUtils.getClaraVersion();
+        String version = VersionUtils.getErsapVersion();
 
         writer.println();
         writer.println("  ███████╗ ██████╗   ██████╗   █████╗  ██████╗");

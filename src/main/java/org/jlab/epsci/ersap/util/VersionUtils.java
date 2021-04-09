@@ -36,7 +36,7 @@ public final class VersionUtils {
         return LazyHolder.INSTANCE;
     }
 
-    public static String getClaraVersion() {
+    public static String getErsapVersion() {
         Properties properties = getInstance();
         String version = properties.getProperty("version");
         if (version == null) {
@@ -49,7 +49,7 @@ public final class VersionUtils {
         return version;
     }
 
-    public static String getClaraVersionFull() {
+    public static String getErsapVersionFull() {
         Properties properties = getInstance();
         String version = properties.getProperty("version");
         if (version == null) {

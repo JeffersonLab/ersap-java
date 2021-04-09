@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
  * Provides the custom serialization methods to send user defined data through
  * the network.
  */
-public interface ClaraSerializer {
+public interface ErsapSerializer {
 
     /**
      * Serializes the user object into a byte buffer and returns it.
