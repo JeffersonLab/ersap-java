@@ -1,7 +1,7 @@
 # ERSAP
 
-A micro-services framework to provide a heterogeneous computing environment for data stream processing.
-
+ An ***E***nvironment for ***R***ealtime ***S***treaming ***A***cquisition and ***P***rocessing,
+ designed to process unbounded streams of continuous data at scale over distributed heterogeneous resources.
 
 ## Build notes
 
