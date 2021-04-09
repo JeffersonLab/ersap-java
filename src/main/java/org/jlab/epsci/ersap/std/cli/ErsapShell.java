@@ -38,7 +38,7 @@ import org.jline.utils.AttributedStyle;
 /**
  * An interactive shell to run ERSAP DPEs and orchestrators.
  */
-public final class ClaraShell implements AutoCloseable {
+public final class ErsapShell implements AutoCloseable {
 
     private static final String HISTORY_NAME = ".ersap_history";
     private static final String DEFAULT_PROMPT = defaultPrompt();
@@ -60,7 +60,7 @@ public final class ClaraShell implements AutoCloseable {
 
 
     public static void main(String[] args) {
-        ClaraShell.Builder builder = ClaraShell.newBuilder();
+        ErsapShell.Builder builder = ErsapShell.newBuilder();
         if (args.length == 1) {
             if (args[0].equals("--version")) {
                 System.out.println(VersionUtils.getClaraVersionFull());
@@ -80,7 +80,7 @@ public final class ClaraShell implements AutoCloseable {
             FarmCommands.register(builder);
         }
 
-        ClaraShell shell = builder.build();
+        ErsapShell shell = builder.build();
 
         Runtime.getRuntime().addShutdownHook(new Thread(shell::close));
 
@@ -99,7 +99,7 @@ public final class ClaraShell implements AutoCloseable {
 
 
     /**
-     * Helps configuring and creating a new {@link ClaraShell}.
+     * Helps configuring and creating a new {@link ErsapShell}.
      */
     public static class Builder {
 
@@ -242,13 +242,13 @@ public final class ClaraShell implements AutoCloseable {
          *
          * @return the created shell
          */
-        public ClaraShell build() {
-            return new ClaraShell(this);
+        public ErsapShell build() {
+            return new ErsapShell(this);
         }
     }
 
 
-    private ClaraShell(Builder builder) {
+    private ErsapShell(Builder builder) {
         try {
             terminal = builder.terminal.build();
             config = builder.config.build();

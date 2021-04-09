@@ -6,4 +6,4 @@
 # Author gyurjyan
 #
 
-exec ./scripts/exec-class -t org.jlab.ersap.sys.DpeReportTest "$@"
+exec ./scripts/exec-class -t org.jlab.epsci.ersap.sys.DpeReportTest "$@"

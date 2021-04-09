@@ -66,4 +66,4 @@ fi
 
 java_wrapper=${ERSAP_HOME}/lib/ersap/run-java
 
-exec "${java_wrapper}" "${jvm_options[@]}" -Djava.library.path="${java_lib_path}" org.jlab.ersap.sys.Dpe "$@"
+exec "${java_wrapper}" "${jvm_options[@]}" -Djava.library.path="${java_lib_path}" org.jlab.epsci.ersap.sys.Dpe "$@"

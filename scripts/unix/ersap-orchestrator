@@ -26,4 +26,4 @@ fi
 
 java_wrapper=${ERSAP_HOME}/lib/ersap/run-java
 
-exec "${java_wrapper}" "${jvm_options[@]}" org.jlab.ersap.std.orchestrators.GenericOrchestrator "$@"
+exec "${java_wrapper}" "${jvm_options[@]}" org.jlab.epsci.ersap.std.orchestrators.GenericOrchestrator "$@"

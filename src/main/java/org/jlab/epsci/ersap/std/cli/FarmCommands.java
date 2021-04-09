@@ -215,7 +215,7 @@ final class FarmCommands {
         return Files.isDirectory(ERSAP_USER_DATA);
     }
 
-    static void register(ClaraShell.Builder builder) {
+    static void register(ErsapShell.Builder builder) {
         configTemplates();
         builder.withConfiguration(FarmCommands::clasVariables);
         builder.withConfiguration(FarmCommands::farmVariables);

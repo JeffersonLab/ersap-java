@@ -6,4 +6,4 @@
 # Author gyurjyan
 #
 
-exec ./scripts/exec-class org.jlab.ersap.sys.Dpe "$@"
+exec ./scripts/exec-class org.jlab.epsci.ersap.sys.Dpe "$@"

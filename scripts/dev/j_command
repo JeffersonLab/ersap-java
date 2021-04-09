@@ -6,4 +6,4 @@
 # Author gyurjyan
 #
 
-exec ./scripts/exec-class org.jlab.ersap.base.core.CommandDebugger "$@"
+exec ./scripts/exec-class org.jlab.epsci.ersap.base.core.CommandDebugger "$@"

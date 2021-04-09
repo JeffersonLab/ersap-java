@@ -73,4 +73,4 @@ fi
 
 java_wrapper=${ERSAP_HOME}/lib/ersap/run-java
 
-exec "${java_wrapper}" "${jvm_options[@]}" org.jlab.ersap.std.cli.ersapShell "$@"
+exec "${java_wrapper}" "${jvm_options[@]}" org.jlab.epsci.ersap.std.cli.ErsapShell "$@"

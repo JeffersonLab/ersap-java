@@ -6,4 +6,4 @@
 # Author gyurjyan
 #
 
-exec ./scripts/exec-class org.jlab.ersap.std.orchestrators.GenericOrchestrator "$@"
+exec ./scripts/exec-class org.jlab.epsci.ersap.std.orchestrators.GenericOrchestrator "$@"

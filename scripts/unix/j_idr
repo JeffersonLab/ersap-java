@@ -21,4 +21,4 @@ fi
 
 java_wrapper=${ERSAP_HOME}/lib/ersap/run-java
 
-exec "${java_wrapper}" org.jlab.ersap.std.monitor.InfluxDbReporter "$@"
+exec "${java_wrapper}" org.jlab.epsci.ersap.std.monitor.InfluxDbReporter "$@"

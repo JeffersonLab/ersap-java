@@ -9,4 +9,4 @@
 export ERSAP_COMMAND_WRAPPER=./scripts/lib/cmd-wrapper
 export ERSAP_COMMAND_LOGGER=./scripts/lib/cmd-logger
 export ERSAP_TEMPLATES_DIR=./scripts/lib/templates
-exec ./scripts/exec-class org.jlab.ersap.std.cli.ClaraShell "$@"
+exec ./scripts/exec-class org.jlab.epsci.ersap.std.cli.ErsapShell "$@"
