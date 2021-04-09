@@ -5,7 +5,7 @@
 
 ## Build notes
 
-CLARA requires the Java 14 JDK.
+ERSAP requires the Java 14 JDK.
 Prefer [AdoptOpenJDK](https://adoptopenjdk.net/) for Java binaries,
 and a Java version manager to install and switch JDKs.
 
@@ -44,23 +44,23 @@ or [Homebrew](https://brew.sh/) with the [AdoptOpenJDK TAP] for macOS.
 
 ### Installation
 
-To build CLARA use the provided [Gradle](https://gradle.org/) wrapper.
-It will download the required Gradle version and all the CLARA dependencies.
+To build ERSAP use the provided [Gradle](https://gradle.org/) wrapper.
+It will download the required Gradle version and all the ERSAP dependencies.
 
     $ ./gradlew
 
-To install the CLARA artifact to the local Maven repository:
+To install the ERSAP artifact to the local Maven repository:
 
     $ ./gradlew install
 
-To deploy the binary distribution to `$CLARA_HOME`:
+To deploy the binary distribution to `$ERSAP_HOME`:
 
     $ ./gradlew deploy
 
 
 ### Importing the project into your IDE
 
-Gradle can generate the required configuration files to import the CLARA
+Gradle can generate the required configuration files to import the ERSAP
 project into [Eclipse](https://eclipse.org/ide/) and
 [IntelliJ IDEA](https://www.jetbrains.com/idea/):
 
