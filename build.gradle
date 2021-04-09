@@ -11,7 +11,7 @@ plugins {
 
 allprojects {
     group = 'org.jlab.epsci'
-    version = '5.0-SNAPSHOT'
+    version = '1.0-SNAPSHOT'
 
     defaultTasks 'build'
 }
@@ -178,15 +178,29 @@ jar.dependsOn generateVersionProperties
 //////////////////////////////////////////////////////////////////////////////
 
 def deploySpec = copySpec {
-    into('lib') {
-        duplicatesStrategy 'exclude'
+    into ('lib') {
+        from configurations.runtimeClasspath
+        from jar.archiveFile
     }
 
-    from('scripts/unix') {
+    from ('scripts/unix') {
         into 'bin'
+        exclude 'etc'
         fileMode 0755
     }
 
+    from ('scripts/lib') {
+        into 'lib/ersap'
+        fileMode 0755
+    }
+
+    // trick Gradle to "create" empy directories
+    def tempDir = "${buildDir}/distributions/ersap_home"
+
+    file("${tempDir}/log").mkdirs()
+    file("${tempDir}/plugins").mkdirs()
+
+    from tempDir
 }
 
 task deploy(type: Copy) {
