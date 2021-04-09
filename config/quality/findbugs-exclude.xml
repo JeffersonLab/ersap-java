@@ -1,0 +1,47 @@
+<FindBugsFilter>
+  <!-- Exclude internationalization -->
+  <Match>
+    <Bug category="I18N" />
+  </Match>
+
+  <!-- Exclude name checks (CheckStyle is used for that) -->
+  <Match>
+    <Bug code="Nm" />
+  </Match>
+
+  <!-- Exclude malicious code category from tests -->
+  <Match>
+    <Or>
+      <Class name="~.*\.*Test" />
+    </Or>
+    <Bug category="MALICIOUS_CODE" />
+  </Match>
+
+  <!-- Include 1 to 16 -->
+  <Match>
+    <Rank value="17" />
+  </Match>
+
+  <!-- False positive in Java 11, see https://github.com/spotbugs/spotbugs/issues/756 -->
+  <Match>
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
+  </Match>
+
+  <!-- False positive in Java 11, see https://github.com/spotbugs/spotbugs/issues/756 -->
+  <Match>
+    <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>
+  </Match>
+
+  <!-- Do not trigger on Groovy closures -->
+  <Match>
+    <Source name="~.*\.groovy" />
+    <Bug pattern="SE_NO_SERIALVERSIONID" />
+  </Match>
+
+  <!-- Fix Spock initialization (?) -->
+  <Match>
+    <Source name="~.*\.groovy" />
+    <Bug pattern="LI_LAZY_INIT_STATIC" />
+    <Field name="$callSiteArray" />
+  </Match>
+</FindBugsFilter>

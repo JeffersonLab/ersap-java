@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#
+# Copyright (c) 2021.  Jefferson Science Associates, LLC.
+# Subject to the terms in the LICENSE file found in the top-level directory.
+# Author gyurjyan
+#
+
+set -e
+
+DEV_TAG=ersapdk-$CACHE_TAG
+DEV_TAG=${DEV_TAG%-latest}
+
+docker build --target build --tag $DOCKER_REPO:$DEV_TAG -f Dockerfile ..
+docker build --tag $IMAGE_NAME -f Dockerfile ..

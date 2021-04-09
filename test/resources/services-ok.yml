@@ -1,0 +1,15 @@
+---
+io-services:
+  reader:
+    class: org.jlab.clas12.convertors.EvioToEvioReader
+    name: EvioToEvioReader
+  writer:
+    class: org.jlab.clas12.convertors.EvioToEvioWriter
+    name: EvioToEvioWriter
+services:
+  - class: org.jlab.clas12.ec.services.ECReconstruction
+    name: ECReconstruction
+  - class: org.clas12.services.tracking.SeedFinder
+    name: SeedFinder
+  - class: org.jlab.clas12.ftof.services.FTOFReconstruction
+    name: FTOFReconstruction

@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE suppressions PUBLIC
+    "-//Puppy Crawl//DTD Suppressions 1.1//EN"
+    "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+
+<suppressions>
+  <!-- ignore Javadoc -->
+  <suppress checks="Javadoc.*" files="org[\\/]jlab[\\/]epsci[\\/]ersap[\\/]base[\\/]core"/>
+  <suppress checks="Javadoc.*" files="org[\\/]jlab[\\/]epsci[\\/]ersap[\\/]msg[\\/]sys[\\/].+[\\/]"/>
+  <suppress checks="Javadoc.*" files="org[\\/]jlab[\\/]epsci[\\/]ersap[\\/]sys[\\/]ccc"/>
+  <suppress checks="Javadoc.*" files="org[\\/]jlab[\\/]epsci[\\/]ersap[\\/]sys[\\/]report"/>
+  <suppress checks="Javadoc.*" files="org[\\/]jlab[\\/]epsci[\\/]ersap[\\/]util"/>
+  <suppress checks="Javadoc.*" files=".*Test\.java"/>
+
+  <!-- TODO remove once checkstyle#7064 is done -->
+  <suppress checks="LineLength" files="org[\\/]jlab[\\/]epsci[\\/]ersap[\\/]util[\\/]logging"/>
+</suppressions>
