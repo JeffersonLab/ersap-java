@@ -51,7 +51,7 @@ It will download the required Gradle version and all the ERSAP dependencies.
 
 To install the ERSAP artifact to the local Maven repository:
 
-    $ ./gradlew install
+    $ ./gradlew publishToMavenLocal
 
 To deploy the binary distribution to `$ERSAP_HOME`:
 
