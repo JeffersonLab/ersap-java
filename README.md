@@ -1,7 +1,6 @@
 # ERSAP
 
-A micro-services framework to provide a heterogeneous computing environment for efficient
-Big Data processing.
+A micro-services framework to provide a heterogeneous computing environment for data stream processing.
 
 
 ## Build notes
