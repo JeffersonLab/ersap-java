@@ -11,7 +11,6 @@ plugins {
 
 allprojects {
     group = 'org.jlab.epsci'
-    archivesBaseName = 'ersap'
     version = '1.0-SNAPSHOT'
 
     defaultTasks 'build'
