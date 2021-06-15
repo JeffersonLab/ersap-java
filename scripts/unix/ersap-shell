@@ -15,9 +15,9 @@ if [ -z "${ERSAP_HOME}" ]; then
 fi
 if [ -z "${ERSAP_USER_DATA}" ]; then
     echo "Warning: ERSAP_USER_DATA environmental variable is not assigned.
-         It will be set to point to the ERSAP_HOME/plugins/clas12.
+         It will be set to point to the ERSAP_HOME/plugins/epsci.
          Note that you might face permission exceptions. "
-     export ERSAP_USER_DATA="${ERSAP_HOME}/plugins/clas12"
+     export ERSAP_USER_DATA="${ERSAP_HOME}/plugins/epsci"
 else
    if [ ! -d "${ERSAP_USER_DATA}/config" ]; then
      mkdir -p "${ERSAP_USER_DATA}/config"
@@ -54,11 +54,7 @@ if [ -z "${CLASSPATH}" ]; then
     # Add every plugin
     for plugin in "${plugins_dir}"/*/; do
         plugin=${plugin%*/}
-        if [ "${plugin##*/}" = "clas12" ]; then # COAT has special needs
-            CLASSPATH+=":${plugin}/lib/clas/*:${plugin}/lib/services/*"
-        else
             CLASSPATH+=":${plugin}/services/*:${plugin}/lib/*"
-        fi
     done
 
     CLASSPATH+=":${ERSAP_HOME}/services/*"
