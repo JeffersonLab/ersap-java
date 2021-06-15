@@ -39,14 +39,14 @@ public final class EnvUtils {
     /**
      * Gets the value of the ERSAP_USER_DATA environment variable.
      *
-     * @return the ERSAP home directory
+     * @return the ERSAP_USER_DATA home directory
      */
     public static String ersapUserData() {
         String ersapUserData = System.getenv("ERSAP_USER_DATA");
         if (ersapUserData == null) {
             ersapUserData = EnvUtils.ersapHome()
                 + File.separator + "plugins"
-                + File.separator + "clas12";
+                + File.separator + "epsci";
         }
         return ersapUserData;
     }

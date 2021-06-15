@@ -94,7 +94,7 @@ final class FarmCommands {
 
     private static final Configuration FTL_CONFIG = new Configuration(Configuration.VERSION_2_3_25);
 
-    static final Path PLUGIN = FileUtils.ersapPath("plugins", "clas12");
+    static final Path PLUGIN = FileUtils.ersapPath("plugins", "epsci");
 
     static final Path ERSAP_USER_DATA = FileUtils.userDataPath();
 
@@ -111,7 +111,7 @@ final class FarmCommands {
             FTL_CONFIG.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
             FTL_CONFIG.setLogTemplateExceptions(false);
         } catch (IOException e) {
-            throw new IllegalStateException("Missing CLAS12 templates directory: " + tplDir);
+            throw new IllegalStateException("Missing EPSCI templates directory: " + tplDir);
         }
     }
 
@@ -592,7 +592,7 @@ final class FarmCommands {
             // set core variables
             model.put("user", EnvUtils.userName());
             model.put("ersap", "dir", EnvUtils.ersapHome());
-            model.put("clas12", "dir", PLUGIN);
+            model.put("epsci", "dir", PLUGIN);
             model.put("user_data", "dir", EnvUtils.ersapUserData());
 
             // set monitor FE

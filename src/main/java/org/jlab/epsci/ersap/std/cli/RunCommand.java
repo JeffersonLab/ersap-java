@@ -225,9 +225,9 @@ class RunCommand extends BaseCommand {
             if (config.hasValue(Config.MAX_THREADS)) {
                 return config.getInt(Config.MAX_THREADS);
             }
-            // For CLAS12 students who will use interactive nodes for processing
-            // we limit default threading level
-//            return 4;
+            // For students who will use interactive nodes for processing
+            // we limit default threading leve
+            //            return 4;
             return Runtime.getRuntime().availableProcessors();
         }
 
