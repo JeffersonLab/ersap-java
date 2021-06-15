@@ -180,7 +180,7 @@ public class OrchestratorConfigParser {
 
 
     private ServiceInfo getStageService() {
-        return new ServiceInfo("org.jlab.ersap.std.services.DataManager",
+        return new ServiceInfo("org.jlab.epsci.ersap.std.services.DataManager",
                                parseDefaultContainer(), "DataManager", ErsapLang.JAVA);
     }
 
