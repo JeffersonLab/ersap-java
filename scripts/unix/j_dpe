@@ -31,7 +31,7 @@ if [ -z "${CLASSPATH}" ]; then
     # Add every plugin
     for plugin in "${plugins_dir}"/*/; do
         plugin=${plugin%*/}
-            CLASSPATH+=":${plugin}/services/*:${plugin}/lib/*"
+            CLASSPATH+=":${plugin}/lib/*"
     done
 
     CLASSPATH+=":${ERSAP_HOME}/services/*"
