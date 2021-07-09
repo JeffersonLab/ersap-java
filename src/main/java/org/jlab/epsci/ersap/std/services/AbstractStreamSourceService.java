@@ -20,7 +20,7 @@ import java.util.Set;
  *
  * @param <TwoStreamSource> Two stream aggregator and decoder object
  */
-public abstract class AbstractTwoStreamSourceService<TwoStreamSource> extends AbstractService {
+public abstract class AbstractStreamSourceService<TwoStreamSource> extends AbstractService {
     private static final String CONF_ACTION = "action";
 
     private static final String CONF_ACTION_CONNECT = "connect";
