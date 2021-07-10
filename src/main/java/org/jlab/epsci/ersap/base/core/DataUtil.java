@@ -76,7 +76,8 @@ public final class DataUtil {
                 }
             }
         }
-        if (mimeType.equals(EngineDataType.STRING.mimeType())) {
+        if (mimeType.equals(EngineDataType.STRING.mimeType()) ||
+            mimeType.equals(EngineDataType.JSON.mimeType())) { //vg 07.10
             ByteBuffer bb = EngineDataType.STRING.serializer().write(data.getData());
             return new xMsgMessage(topic, metadata, bb.array());
         }
