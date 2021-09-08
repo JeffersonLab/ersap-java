@@ -2,11 +2,11 @@
 
  An ***E***nvironment for ***R***ealtime ***S***treaming ***A***cquisition and ***P***rocessing,
  designed to process unbounded streams of continuous data at scale over distributed heterogeneous resources.
- 
+
 ### ERSAP is modular
 ERSAP presents a micro-services architecture for data-stream analytics. One can think of ERSAP as a software LEGO system to design and deploy scientific data processing applications without writing a single line of code. It is a data-in-motion platform to build streaming scientific-data analytics applications.
 ### ERSAP is resilient
-ERSAP application stays responsive in the face of a failure. Resilience is achieved by service replication, failure containment, isolation and delegation. Failures are contained within each service, isolating services from each other and thereby ensuring that parts of the system can fail and recover without compromising the system as a whole. 
+ERSAP application stays responsive in the face of a failure. Resilience is achieved by service replication, failure containment, isolation and delegation. Failures are contained within each service, isolating services from each other and thereby ensuring that parts of the system can fail and recover without compromising the system as a whole.
 ### ERSAP is elastic
 ERSAP system stays amenable under varying workloads. It reacts to changes in the input data-stream rate by increasing or decreasing the resource allocation to process an input stream. ERSAP orchestrator implements predictive, as well as reactive scaling algorithms by providing relevant live performance measures. We achieve elasticity in a cost-effective way on commodity hardware and software platforms.
 ### ERSAP is reactive
@@ -81,4 +81,4 @@ See also the [Eclipse Buildship plugin](http://www.vogella.com/tutorials/Eclipse
 and the [Intellij IDEA Gradle Help](https://www.jetbrains.com/help/idea/2016.2/gradle.html).
 
 
-For assistance send email to [epsci@jlab.org](mailto:epsci@jlab.org).
+For assistance send email to [sro@jlab.org](mailto:sro@jlab.org).
