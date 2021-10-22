@@ -22,6 +22,7 @@ import org.json.JSONObject;
  * An abstract reader service that reads events from the configured input file.
  *
  * @param <Reader> the class for the user-defined reader of the given data-type
+ *
  */
 public abstract class AbstractEventReaderService<Reader> extends AbstractService {
 
