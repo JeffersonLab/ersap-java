@@ -17,8 +17,6 @@ import java.util.Set;
  * Empty engine.
  *
  *
- *
- *   2/ 17
  */
 public class Empty implements Engine {
 

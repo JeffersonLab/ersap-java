@@ -9,9 +9,6 @@ package org.jlab.epsci.ersap.engine;
 /**
  * Data processing status.
  *
- *
- *
- *   2/2 15
  */
 public enum EngineStatus {
     /** Status for information data. */

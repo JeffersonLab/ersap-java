@@ -17,9 +17,6 @@ import java.util.Set;
 /**
  * User engine class example.
  *
- *
- *
- *   2/ 15
  */
 public class E1 implements Engine {
     private long nr = 0;

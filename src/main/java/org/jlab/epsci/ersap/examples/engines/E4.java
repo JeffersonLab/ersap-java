@@ -18,8 +18,6 @@ import java.util.Set;
  * User engine class example.
  *
  *
- *
- *   2/ 15
  */
 public class E4 implements Engine {
 

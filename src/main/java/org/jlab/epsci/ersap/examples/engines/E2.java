@@ -17,8 +17,6 @@ import java.util.Set;
  * User engine class example.
  *
  *
- *
- *   2/ 15
  */
 public class E2 implements Engine {
     @Override

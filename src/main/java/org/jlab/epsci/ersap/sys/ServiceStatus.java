@@ -20,8 +20,6 @@ import org.jlab.epsci.ersap.base.core.ErsapConstants;
  * </p>
  *
  *
- *
- *   2/2/15
  */
 class ServiceStatus {
     private String name = ErsapConstants.UNDEFINED;
