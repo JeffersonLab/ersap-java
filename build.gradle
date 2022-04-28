@@ -28,8 +28,8 @@ apply plugin: 'com.github.spotbugs'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 
-sourceCompatibility = JavaVersion.VERSION_11
-targetCompatibility = JavaVersion.VERSION_11
+//sourceCompatibility = JavaVersion.VERSION_11
+//targetCompatibility = JavaVersion.VERSION_11
 
 repositories {
     maven {
