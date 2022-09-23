@@ -326,7 +326,7 @@ public class CompositionCompiler {
         return outputs;
     }
 
-    public Set<String> getLinks(ServiceState ownerSS, ServiceState inputSS) {
+    public Set<String>  getLinks(ServiceState ownerSS, ServiceState inputSS) {
 
         Set<String> outputs = new HashSet<>();
 

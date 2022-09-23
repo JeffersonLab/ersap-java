@@ -37,7 +37,9 @@ if [ -z "${CLASSPATH}" ]; then
     CLASSPATH+=":${ERSAP_HOME}/services/*"
     export CLASSPATH
 fi
-
+echo "HEYYYYYYYYYY"
+echo $CLASSPATH
+echo "HEYYYYYYYYYY"
 # set java.library.path
 java_lib_path=
 for plugin in "${plugins_dir}"/*/; do

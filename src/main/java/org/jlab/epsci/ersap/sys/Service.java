@@ -78,7 +78,7 @@ class Service extends AbstractActor {
         enginePool = new ServiceEngine[comp.getSubscriptionPoolSize()];
 
         // Fill the object pool
-        ServiceActor engineActor = new ServiceActor(comp, frontEnd, connectionPools);
+        ServiceActor engineActor = new  ServiceActor(comp, frontEnd, connectionPools);
         for (int i = 0; i < comp.getSubscriptionPoolSize(); i++) {
             enginePool[i] = new ServiceEngine(userEngine, engineActor, sysConfig, sysReport);
         }

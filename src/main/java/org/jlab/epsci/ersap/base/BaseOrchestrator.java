@@ -240,7 +240,7 @@ public class BaseOrchestrator implements AutoCloseable {
      * Returns a request builder to execute the given composition.
      *
      * @param composition the ERSAP composition to be executed
-     * @return a builder to to configure the execute request
+     * @return a builder to configure the execute request
      *         (with data, data types, etc)
      */
     public ErsapRequests.ServiceExecuteRequestBuilder execute(Composition composition) {
