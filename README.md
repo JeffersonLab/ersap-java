@@ -52,7 +52,7 @@ or [Homebrew](https://brew.sh/) with the [AdoptOpenJDK TAP] for macOS.
 
 
 ### Installation
-git clone https://githug.com/JeffersonLab/ersap-java.git
+git clone https://github.com/JeffersonLab/ersap-java.git
 
 
 To build ERSAP use the provided [Gradle](https://gradle.org/) wrapper.
