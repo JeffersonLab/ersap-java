@@ -248,7 +248,7 @@ abstract class AbstractOrchestrator {
             if (!checkChain(node)) {
                 deploy(node);
             }
-//            subscribe(node); //@todo for streaming
+            subscribe(node); //@todo comment for streaming
 
             if (options.stageFiles) {
                 node.setPaths(paths.inputDir, paths.outputDir, paths.stageDir, paths.prefix);
