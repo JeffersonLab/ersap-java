@@ -10,8 +10,7 @@
   },
   "createdBy": {
     "gradle": {
-      "version": "6.3",
-      "buildId": "fqdchqpmajhgrckny22j4ssqv4"
+      "version": "8.1.1"
     }
   },
   "variants": [
@@ -20,7 +19,7 @@
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.dependency.bundling": "external",
-        "org.gradle.jvm.version": 8,
+        "org.gradle.jvm.version": 17,
         "org.gradle.libraryelements": "jar",
         "org.gradle.usage": "java-api"
       },
@@ -51,11 +50,11 @@
         {
           "name": "ersap-java-1.0-SNAPSHOT.jar",
           "url": "ersap-java-1.0-SNAPSHOT.jar",
-          "size": 458712,
-          "sha512": "1e408202de0e40bed4a61ba99674fdeb2c76c13d9841270ade81474f346dac517c17a9e8726f8f86a66ea71091c36657c121cc211363436bea8e2495a64a7d77",
-          "sha256": "755fa05178b4549f975ec7a23aa3759fda161e2e1fb1b8bfb5377143afacbc14",
-          "sha1": "bf5e1a6fcfa985ad11c8a0e5921b24050441d8fd",
-          "md5": "92142c2833b505bde75c7847cdf68d0e"
+          "size": 463007,
+          "sha512": "7af758a85d99d226872eddef3d9b0046ca5988dd36ecabe80577a0bbc3ed76ad5b11a1c83a7d8c38aa09e7b08f824ca2b7d71f4272f15e10963325f60c41f7a2",
+          "sha256": "4c3f88ba76d1e91a23b5695d34e2b8c5cd5cb5cbf0396bb94b0fceef0ff85a7b",
+          "sha1": "76ebddea87b393fd310eb61c413cb86af4a1f9d3",
+          "md5": "b61d36a85b4b9826103aa1ba09bddc0e"
         }
       ]
     },
@@ -64,7 +63,7 @@
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.dependency.bundling": "external",
-        "org.gradle.jvm.version": 8,
+        "org.gradle.jvm.version": 17,
         "org.gradle.libraryelements": "jar",
         "org.gradle.usage": "java-runtime"
       },
@@ -130,11 +129,11 @@
         {
           "name": "ersap-java-1.0-SNAPSHOT.jar",
           "url": "ersap-java-1.0-SNAPSHOT.jar",
-          "size": 458712,
-          "sha512": "1e408202de0e40bed4a61ba99674fdeb2c76c13d9841270ade81474f346dac517c17a9e8726f8f86a66ea71091c36657c121cc211363436bea8e2495a64a7d77",
-          "sha256": "755fa05178b4549f975ec7a23aa3759fda161e2e1fb1b8bfb5377143afacbc14",
-          "sha1": "bf5e1a6fcfa985ad11c8a0e5921b24050441d8fd",
-          "md5": "92142c2833b505bde75c7847cdf68d0e"
+          "size": 463007,
+          "sha512": "7af758a85d99d226872eddef3d9b0046ca5988dd36ecabe80577a0bbc3ed76ad5b11a1c83a7d8c38aa09e7b08f824ca2b7d71f4272f15e10963325f60c41f7a2",
+          "sha256": "4c3f88ba76d1e91a23b5695d34e2b8c5cd5cb5cbf0396bb94b0fceef0ff85a7b",
+          "sha1": "76ebddea87b393fd310eb61c413cb86af4a1f9d3",
+          "md5": "b61d36a85b4b9826103aa1ba09bddc0e"
         }
       ]
     },
@@ -143,7 +142,7 @@
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.dependency.bundling": "external",
-        "org.gradle.jvm.version": 8,
+        "org.gradle.jvm.version": 17,
         "org.gradle.libraryelements": "jar",
         "org.gradle.usage": "java-api"
       },
@@ -161,10 +160,10 @@
           "name": "ersap-java-1.0-SNAPSHOT-test-fixtures.jar",
           "url": "ersap-java-1.0-SNAPSHOT-test-fixtures.jar",
           "size": 261,
-          "sha512": "466b004897ad8013af60742e2687982b1b4b9ae0e67dc1aeb4c52a59f5169713f47a82dd2b4caf01ef38af48428df5ed2f839138bff1eb25537bd687f3be9c13",
-          "sha256": "13b7d49a167de370b8e20b28fe0e0dba9924e9e2e4d6d4d73e769065c456088f",
-          "sha1": "628864a75df4805f62bbf71f53fbb56ee8a1e6cb",
-          "md5": "80b1afe4bec58a46b6b9842e04e48a76"
+          "sha512": "6d8b51c8fa758efc9e6fee926595fb50bbc986d9cea2ded345f70e4a659350403fbf7a20f94aed441dbf483fc80bfbe11882989f02e6cda525e88f5309156b58",
+          "sha256": "ff3a392248f15894d2a482b26b4bc165b0d1c4e11b509e80339da39c03220c92",
+          "sha1": "1f2134fd7700c0094f6f521f0cbbb74a2ddadecc",
+          "md5": "b4b941af4bfee6baccb126954dfbce65"
         }
       ],
       "capabilities": [
@@ -180,7 +179,7 @@
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.dependency.bundling": "external",
-        "org.gradle.jvm.version": 8,
+        "org.gradle.jvm.version": 17,
         "org.gradle.libraryelements": "jar",
         "org.gradle.usage": "java-runtime"
       },
@@ -198,10 +197,10 @@
           "name": "ersap-java-1.0-SNAPSHOT-test-fixtures.jar",
           "url": "ersap-java-1.0-SNAPSHOT-test-fixtures.jar",
           "size": 261,
-          "sha512": "466b004897ad8013af60742e2687982b1b4b9ae0e67dc1aeb4c52a59f5169713f47a82dd2b4caf01ef38af48428df5ed2f839138bff1eb25537bd687f3be9c13",
-          "sha256": "13b7d49a167de370b8e20b28fe0e0dba9924e9e2e4d6d4d73e769065c456088f",
-          "sha1": "628864a75df4805f62bbf71f53fbb56ee8a1e6cb",
-          "md5": "80b1afe4bec58a46b6b9842e04e48a76"
+          "sha512": "6d8b51c8fa758efc9e6fee926595fb50bbc986d9cea2ded345f70e4a659350403fbf7a20f94aed441dbf483fc80bfbe11882989f02e6cda525e88f5309156b58",
+          "sha256": "ff3a392248f15894d2a482b26b4bc165b0d1c4e11b509e80339da39c03220c92",
+          "sha1": "1f2134fd7700c0094f6f521f0cbbb74a2ddadecc",
+          "md5": "b4b941af4bfee6baccb126954dfbce65"
         }
       ],
       "capabilities": [
@@ -224,11 +223,11 @@
         {
           "name": "ersap-java-1.0-SNAPSHOT-sources.jar",
           "url": "ersap-java-1.0-SNAPSHOT-sources.jar",
-          "size": 225762,
-          "sha512": "a8d618495e96438c6e967d8e6c8c53e5edf7514c890eaf259e29bee53addf1f60b5d8b4b973240016e7798e9cccbbfe748c5887b325af00fe87c527d936a4ffb",
-          "sha256": "1a4c7472b2173c3f991cdc5b4a3aa56402627ae2d731a13534f6768b3c3ea504",
-          "sha1": "3b744c17342cc98f0772bc0074787fa79f4a0283",
-          "md5": "0902637f6fa7fbfbdee8df143058f0ab"
+          "size": 225769,
+          "sha512": "84ec7dcc0cef73f296d3080a4eaeb5a06a16e246279e3a73105efd05417b2f740905c70f2177a6c404c8fca628fce063718902ab6ad5bbc39f136005e6ce669a",
+          "sha256": "812e9d331ded2a1b1873bd3843f570a38a0ecc32c172b2eb1bdf5acbe6e4ba18",
+          "sha1": "8fbd63f8ec3e0faf68353bdaef80f68e7f784afd",
+          "md5": "e71137e6d66cfad3d4098f4b199b5bce"
         }
       ]
     },
@@ -244,11 +243,11 @@
         {
           "name": "ersap-java-1.0-SNAPSHOT-javadoc.jar",
           "url": "ersap-java-1.0-SNAPSHOT-javadoc.jar",
-          "size": 509678,
-          "sha512": "59c3ba4ca0c8325091ae94612b4d89fbf2406db8beb7d15724e125986f7bcbfffd7932c3c215e6d772e8e96220818f061614edc96f34dfb5caf9b1d0ebf3dbb7",
-          "sha256": "ec7c9f86e861b1143d68f436eeeef2cd1fc9e363a63bb7c63dbee27078438abf",
-          "sha1": "492c9358aea12b5b079917bcd1561d7f67940e5b",
-          "md5": "a9de6b6d43bbb0b331d455daa0ad9110"
+          "size": 589407,
+          "sha512": "89f9723afcf8cf89f2a9b2488a1e431a288e6f50d39e68acede7f42054e7e4d6b9f1c58d7e07ac67a1a41d0f91f78937a2fa499e19450ec3fb868966c612db8e",
+          "sha256": "1ad2e13962aacb59fe1360658b0ccfee32c93661e26f02e263603ccba1e494a9",
+          "sha1": "22f99583d5163beb0cef0d9c01f9a8e904dcb9d3",
+          "md5": "81fd5364bdbf60ce968701dbe5617c7a"
         }
       ]
     }

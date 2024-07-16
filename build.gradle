@@ -327,6 +327,10 @@ task spotbugs {
     }
 }
 
+tasks.named("javadoc").configure { dependsOn("generateVersionProperties") }
+tasks.named("checkstyleMain").configure { dependsOn("generateVersionProperties") }
+
+
 //////////////////////////////////////////////////////////////////////////////
 // IDE configuration
 //////////////////////////////////////////////////////////////////////////////
