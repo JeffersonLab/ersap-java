@@ -41,11 +41,6 @@ java {
     withJavadocJar()
 }
 
-javadoc {
-    options.charSet = 'utf8'
-    options.encoding = 'utf8'
-    options.docEncoding = 'utf8'
-}
 
 publishing {
     publications {
@@ -111,6 +106,7 @@ dependencies {
     implementation 'org.yaml:snakeyaml:1.28'
     implementation 'org.apache.commons:commons-exec:1.3'
     implementation 'org.jlab.coda:jinflux:1.0-SNAPSHOT'
+    implementation 'org.jetbrains:annotations:24.0.1'
 
     constraints {
         codenarc(test_libs.groovy)
@@ -167,6 +163,17 @@ task generateVersionProperties {
             propertiesFile.append "git.describe=${gitDescribe}\n"
         }
     }
+}
+
+tasks.named('javadoc') {
+    dependsOn tasks.named('generateVersionProperties')
+    options.charSet = 'utf8'
+    options.encoding = 'utf8'
+    options.docEncoding = 'utf8'
+}
+
+tasks.named('checkstyleMain') {
+    dependsOn tasks.named('generateVersionProperties')
 }
 
 jar.dependsOn generateVersionProperties
