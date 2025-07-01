@@ -1,0 +1,12 @@
+#!/bin/sh
+
+#
+# Copyright (c) 2021.  Jefferson Science Associates, LLC.
+# Subject to the terms in the LICENSE file found in the top-level directory.
+# Author gyurjyan
+#
+
+export ERSAP_COMMAND_WRAPPER=./scripts/lib/cmd-wrapper
+export ERSAP_COMMAND_LOGGER=./scripts/lib/cmd-logger
+export ERSAP_TEMPLATES_DIR=./scripts/lib/templates
+exec ./scripts/exec-class org.jlab.epsci.ersap.std.cli.ErsapShell "$@"

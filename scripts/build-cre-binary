@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# Copyright (c) 2021.  Jefferson Science Associates, LLC.
+# Subject to the terms in the LICENSE file found in the top-level directory.
+# Author gyurjyan
+#
+
+# author Vardan Gyurjyan
+# date 1.13.17
+
+mv $ERSAP_HOME $ERSAP_HOME/../ersap-cre
+tar cvf ersap-cre.tar ersap-cre
+gzip ersap-cre.tar
+

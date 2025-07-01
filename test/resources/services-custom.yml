@@ -1,0 +1,57 @@
+---
+io-services:
+  reader:
+    class: org.jlab.clas12.convertors.CustomReader
+    name: CustomReader
+  writer:
+    class: org.jlab.clas12.convertors.CustomWriter
+    name: CustomWriter
+    lang: cpp
+
+services:
+  data-processing:
+    chain:
+      - class: org.jlab.clas12.services.ECReconstruction
+        name: ECReconstruction
+      - class: org.jlab.clas12.services.SeedFinder
+        name: SeedFinder
+      - class: org.jlab.clas12.services.HeaderFilter
+        name: HeaderFilter
+        lang: cpp
+      - class: org.jlab.clas12.services.FTOFReconstruction
+        name: FTOFReconstruction
+  monitoring:
+    chain:
+      - class: org.jlab.clas12.services.ECMonitoring
+        name: ECMonitor
+      - class: org.jlab.clas12.services.DCMonitoring
+        name: DCMonitor
+
+mime-types:
+  - binary/data-evio
+  - binary/data-hipo
+
+configuration:
+  global:
+    magnet:
+      torus: 10.75
+      solenoid: 0.5
+    ccdb:
+      run: 10
+      variation: custom
+    kalman: true
+
+  io-services:
+    reader:
+      block_size: 10000
+    writer:
+      compression: 2
+
+  services:
+    ECReconstruction:
+      log: true
+      layers:
+        - inner
+        - outer
+    HeaderFilter:
+      max_hits: 29
