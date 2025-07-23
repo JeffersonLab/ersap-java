@@ -91,7 +91,7 @@ public class InfluxDbReporter implements DpeReportHandler {
         try {
             jinFlux = new JinFlux(dbNode);
             if (!jinFlux.existsDB(dbName)) {
-                jinFlux.createDB(dbName, 1, JinTime.HOURE);
+                jinFlux.createDB(dbName, 1, JinTime.HOUR);
             }
         } catch (JinFluxException e) {
             throw new RuntimeException(e);
