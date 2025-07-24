@@ -1,44 +1,37 @@
-/*
- * Copyright (c) 2021.  Jefferson Science Associates, LLC.
- * Subject to the terms in the LICENSE file found in the top-level directory.
- * Author gyurjyan
- */
-
 plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+    id 'groovy'
+    id 'maven-publish'
+    id 'checkstyle'
+    id 'codenarc'
+    id 'com.github.spotbugs' version '4.6.2'
+    id 'eclipse'
+    id 'idea'
     id 'com.google.protobuf' version '0.8.15' apply false
-    id 'com.github.spotbugs' version '4.6.2' apply false
 }
 
 allprojects {
     group = 'org.jlab.epsci'
     version = '1.0-SNAPSHOT'
-
     defaultTasks 'build'
-}
 
-apply plugin: 'java-library'
-apply plugin: 'java-test-fixtures'
-apply plugin: 'groovy'
-apply plugin: 'maven-publish'
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
 
-apply plugin: 'checkstyle'
-apply plugin: 'codenarc'
-apply plugin: 'com.github.spotbugs'
-
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-
-
-repositories {
-    mavenLocal()
-    mavenCentral()
+    configurations.all {
+        resolutionStrategy {
+            force 'org.zeromq:jeromq:0.5.4'
+        }
+    }
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
 }
-
 
 publishing {
     publications {
@@ -72,17 +65,12 @@ tasks.withType(GroovyCompile).configureEach {
 }
 
 task allDeps(type: DependencyReportTask) {}
-
-task allDepInsight(type: DependencyInsightReportTask) doLast {}
-
-//////////////////////////////////////////////////////////////////////////////
-// dependencies
-//////////////////////////////////////////////////////////////////////////////
+task allDepInsight(type: DependencyInsightReportTask) {}
 
 ext.libs = [
-    jeromq  : 'org.zeromq:jeromq:0.5.2',
-    protobuf: 'com.google.protobuf:protobuf-java:3.15.5',
-    protoc  : 'com.google.protobuf:protoc:3.15.5',
+    jeromq  : 'org.zeromq:jeromq:0.5.4',
+    protobuf: 'com.google.protobuf:protobuf-java:4.28.2',
+    protoc  : 'com.google.protobuf:protoc:4.28.2',
     jopt    : 'net.sf.jopt-simple:jopt-simple:5.0.4',
     jsr305  : 'com.google.code.findbugs:jsr305:3.0.2'
 ]
@@ -105,6 +93,7 @@ dependencies {
     implementation 'org.apache.commons:commons-exec:1.3'
     implementation 'org.jlab.coda:jinflux:1.0-SNAPSHOT'
     implementation 'org.jetbrains:annotations:24.0.1'
+    implementation libs.jeromq // <-- explicitly added for runtime
 
     constraints {
         codenarc(test_libs.groovy)
@@ -118,10 +107,6 @@ dependencies {
     testRuntimeOnly test_libs.jupiter_engine
     testImplementation test_libs.hamcrest
 }
-
-//////////////////////////////////////////////////////////////////////////////
-// version information
-//////////////////////////////////////////////////////////////////////////////
 
 def runGit(cmd) {
     rootProject.file('.git').exists() ? cmd.execute().text.trim() : ''
@@ -138,7 +123,7 @@ task generateVersionProperties {
 
     inputs.property 'version', project.version
     inputs.property 'groupId', project.group
-    inputs.property 'artifactId', project.archivesBaseName
+    inputs.property 'artifactId', project.name
     inputs.property 'gitBranch', gitBranch
     inputs.property 'gitRev', gitRev
     inputs.property 'gitDescribe', gitDescribe
@@ -147,38 +132,30 @@ task generateVersionProperties {
     doLast {
         propertiesFile.write "version=${project.version}\n"
         propertiesFile.append "groupId=${project.group}\n"
-        propertiesFile.append "artifactId=${project.archivesBaseName}\n"
+        propertiesFile.append "artifactId=${project.name}\n"
         propertiesFile.append "builtBy=${System.getProperty('user.name')}\n"
         propertiesFile.append "builtJDK=${System.getProperty('java.version')}\n"
 
-        if (gitBranch) {
-            propertiesFile.append "git.branch=${gitBranch}\n"
-        }
-        if (gitRev) {
-            propertiesFile.append "git.revision=${gitRev}\n"
-        }
-        if (gitDescribe) {
-            propertiesFile.append "git.describe=${gitDescribe}\n"
-        }
+        if (gitBranch) propertiesFile.append "git.branch=${gitBranch}\n"
+        if (gitRev) propertiesFile.append "git.revision=${gitRev}\n"
+        if (gitDescribe) propertiesFile.append "git.describe=${gitDescribe}\n"
     }
 }
 
 tasks.named('javadoc') {
-    dependsOn tasks.named('generateVersionProperties')
+    dependsOn 'generateVersionProperties'
+    inputs.dir("$buildDir/resources/main")
     options.charSet = 'utf8'
     options.encoding = 'utf8'
     options.docEncoding = 'utf8'
 }
 
 tasks.named('checkstyleMain') {
-    dependsOn tasks.named('generateVersionProperties')
+    dependsOn 'generateVersionProperties'
+    inputs.dir("$buildDir/resources/main")
 }
 
 jar.dependsOn generateVersionProperties
-
-//////////////////////////////////////////////////////////////////////////////
-// deployment
-//////////////////////////////////////////////////////////////////////////////
 
 def deploySpec = copySpec {
     into ('lib') {
@@ -197,18 +174,14 @@ def deploySpec = copySpec {
         fileMode 0755
     }
 
-    // trick Gradle to "create" empy directories
     def tempDir = "${buildDir}/distributions/ersap_home"
-
     file("${tempDir}/log").mkdirs()
     file("${tempDir}/plugins").mkdirs()
-
     from tempDir
 }
 
 task deploy(type: Copy) {
     def dest = "$System.env.ERSAP_HOME"
-
     into dest
     with deploySpec
 
@@ -217,16 +190,9 @@ task deploy(type: Copy) {
             throw new GradleException('ERSAP_HOME not set')
         }
     }
-
 }
 
-
-//////////////////////////////////////////////////////////////////////////////
-// development scripts
-//////////////////////////////////////////////////////////////////////////////
-
 ext {
-    // used by scripts in `scripts/dev/*` through `scripts/exec-class`
     classPathCache = file("${buildDir}/tmp/classpath")
     testClassPathCache = file("${buildDir}/tmp/test_classpath")
 }
@@ -250,10 +216,6 @@ task printClasspath {
 }
 
 assemble.dependsOn cacheClasspath
-
-//////////////////////////////////////////////////////////////////////////////
-// quality check
-//////////////////////////////////////////////////////////////////////////////
 
 ext {
     ciMode = properties['ciMode'] ?: 'false'
@@ -293,12 +255,14 @@ tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
 task checkSpotBugsResults {
     doLast {
         def bugsFound = 0
-        subprojectList.each { subproject ->
-            [subproject.spotbugsMain, subproject.spotbugsTest].each { task ->
-                try {
-                    bugsFound += printSpotBugs task.reports.getByName('XML').destination
-                } catch (FileNotFoundException e) {
-                    logger.info e.message
+        allprojects.each { subproject ->
+            [subproject.tasks.findByName('spotbugsMain'), subproject.tasks.findByName('spotbugsTest')].each { task ->
+                if (task) {
+                    try {
+                        bugsFound += printSpotBugs task.reports.getByName('XML').destination
+                    } catch (FileNotFoundException e) {
+                        logger.info e.message
+                    }
                 }
             }
         }
@@ -318,33 +282,6 @@ def printSpotBugs(File xml) {
     bugs.size()
 }
 
-task codenarc {
-    group = 'Verification'
-    description = 'Marker task to enable codenarc.'
-}
-
-task spotbugs {
-    group = 'Verification'
-    description = 'Marker task to enable SpotBugs.'
-
-    if (ciMode.toBoolean()) {
-        finalizedBy checkSpotBugsResults
-    }
-}
-// Ensure docs and code‑style checks wait for the generated properties
-tasks.named('javadoc') {
-    dependsOn 'generateVersionProperties'
-    inputs.dir("$buildDir/resources/main")
-}
-
-tasks.withType(Checkstyle).configureEach {
-    dependsOn 'generateVersionProperties'
-    inputs.dir("$buildDir/resources/main")
-}
-//////////////////////////////////////////////////////////////////////////////
-// IDE configuration
-//////////////////////////////////////////////////////////////////////////////
-
 eclipse {
     classpath {
         file {
@@ -359,4 +296,3 @@ eclipse {
         }
     }
 }
-
