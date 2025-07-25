@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="943f1171-e9b1-4191-98e3-7f55665c4636" name="Changes" comment="Switch to no-streaming mode">
-      <change afterPath="$PROJECT_DIR$/ersap-java.main.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ersap-java.test.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ersap-java.testFixtures.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ersap-java.iws" beforeDir="false" afterPath="$PROJECT_DIR$/ersap-java.iws" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/jlab/epsci/ersap/std/orchestrators/GenericOrchestrator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/jlab/epsci/ersap/std/orchestrators/GenericOrchestrator.java" afterDir="false" />
-    </list>
+    <list default="true" id="943f1171-e9b1-4191-98e3-7f55665c4636" name="Changes" comment="Switch to no-streaming mode" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -76,6 +70,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="true" />
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -83,6 +80,10 @@
     <option name="LAST_EDITED_MODULE_NAME" />
     <option name="LAST_EDITED_TAB_NAME" />
   </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 6
+}]]></component>
   <component name="ProjectId" id="2XUN4NiAPiWVYVexT1apw77eQaw" />
   <component name="ProjectInspectionProfilesVisibleTreeState">
     <entry key="Project Default">
@@ -100,7 +101,14 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true"
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "go.import.settings.migrated": "true",
+    "kotlin-language-version-configured": "true",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="RunManager">
@@ -177,6 +185,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1698680292493</updated>
+      <workItem from="1753406052633" duration="19000" />
     </task>
     <task id="LOCAL-00001" summary="Switch to no-streaming mode">
       <option name="closed" value="true" />
@@ -189,9 +198,16 @@
     <option name="localTasksCounter" value="2" />
     <servers />
   </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Switch to no-streaming mode" />
     <option name="LAST_COMMIT_MESSAGE" value="Switch to no-streaming mode" />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>false</integration-enabled>
+    <settings-migrated>true</settings-migrated>
   </component>
 </project>
