@@ -1,0 +1,229 @@
+{
+  "title": "ERSAP Overview",
+  "uid": "ersap-overview",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "session",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(ersap_dpe_cpu_usage_percent, session)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "dpe",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(ersap_dpe_cpu_usage_percent{session=~\"$session\"}, dpe)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total processed events",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"})",
+          "legendFormat": "requests"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 2,
+      "title": "Failure rate",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "100 * sum(rate(ersap_service_failures_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum(rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
+          "legendFormat": "error %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "title": "DPEs seen in last 30s",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "count(time() - ersap_dpe_last_report_timestamp_seconds{session=~\"$session\", dpe=~\"$dpe\"} < 30)",
+          "legendFormat": "healthy DPEs"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+    },
+    {
+      "id": 4,
+      "title": "Average execution time",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(ersap_service_execution_seconds_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum(rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
+          "legendFormat": "avg exec time"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "id": 5,
+      "title": "Processing rate by service",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (dpe, container, service) (rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m]))",
+          "legendFormat": "{{dpe}}:{{container}}:{{service}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 6,
+      "title": "Successful vs. failed events",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) - sum(rate(ersap_service_failures_total{session=~\"$session\", dpe=~\"$dpe\"}[5m]))",
+          "legendFormat": "success"
+        },
+        {
+          "expr": "sum(rate(ersap_service_failures_total{session=~\"$session\", dpe=~\"$dpe\"}[5m]))",
+          "legendFormat": "failure"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] }
+    },
+    {
+      "id": 7,
+      "title": "Error rate by service",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "100 * sum by (dpe, container, service) (rate(ersap_service_failures_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum by (dpe, container, service) (rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
+          "legendFormat": "{{dpe}}:{{container}}:{{service}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] }
+    },
+    {
+      "id": 8,
+      "title": "Average execution time by service",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (dpe, container, service) (rate(ersap_service_execution_seconds_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum by (dpe, container, service) (rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
+          "legendFormat": "{{dpe}}:{{container}}:{{service}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] }
+    },
+    {
+      "id": 9,
+      "title": "DPE CPU usage",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 20, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "ersap_dpe_cpu_usage_percent{session=~\"$session\", dpe=~\"$dpe\"}",
+          "legendFormat": "{{dpe}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] }
+    },
+    {
+      "id": 10,
+      "title": "DPE memory usage",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 20, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "ersap_dpe_memory_usage_bytes{session=~\"$session\", dpe=~\"$dpe\"}",
+          "legendFormat": "{{dpe}}"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+    },
+    {
+      "id": 11,
+      "title": "Network bytes sent / received",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (dpe, service) (rate(ersap_service_bytes_sent_total{session=~\"$session\", dpe=~\"$dpe\"}[5m]))",
+          "legendFormat": "{{dpe}}:{{service}} tx"
+        },
+        {
+          "expr": "sum by (dpe, service) (rate(ersap_service_bytes_received_total{session=~\"$session\", dpe=~\"$dpe\"}[5m]))",
+          "legendFormat": "{{dpe}}:{{service}} rx"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] }
+    },
+    {
+      "id": 12,
+      "title": "Shared memory reads / writes",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (dpe, service) (rate(ersap_service_shared_memory_reads_total{session=~\"$session\", dpe=~\"$dpe\"}[5m]))",
+          "legendFormat": "{{dpe}}:{{service}} reads"
+        },
+        {
+          "expr": "sum by (dpe, service) (rate(ersap_service_shared_memory_writes_total{session=~\"$session\", dpe=~\"$dpe\"}[5m]))",
+          "legendFormat": "{{dpe}}:{{service}} writes"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" }, "overrides": [] }
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+version: "3.8"
+
+# ERSAP observability stack: Prometheus scrapes PrometheusReporter (j_pr),
+# Grafana visualizes it. Run this on whatever remote node should host
+# monitoring; it does not need to run on the same host as any DPE.
+#
+# Before starting, edit prometheus/prometheus.yml and set the real
+# host:port of the node running j_pr (default port 9200).
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: ersap-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: ersap-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=changeme
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+
+volumes:
+  prometheus-data:
+  grafana-data:
