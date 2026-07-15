@@ -31,6 +31,8 @@ WORKDIR /usr/local/src
 VOLUME ["${ERSAP_HOME}/data/input", "${ERSAP_HOME}/data/output", "${ERSAP_HOME}/log"]
 
 EXPOSE 7771-7775
+# Prometheus metrics endpoint, only used when this image runs j_pr (PrometheusReporter)
+EXPOSE 9200
 
 
 FROM openjdk:8-jre-slim
@@ -49,3 +51,5 @@ WORKDIR /root
 VOLUME ["${ERSAP_HOME}/data/input", "${ERSAP_HOME}/data/output", "${ERSAP_HOME}/log"]
 
 EXPOSE 7771-7775
+# Prometheus metrics endpoint, only used when this image runs j_pr (PrometheusReporter)
+EXPOSE 9200

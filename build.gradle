@@ -68,11 +68,14 @@ task allDeps(type: DependencyReportTask) {}
 task allDepInsight(type: DependencyInsightReportTask) {}
 
 ext.libs = [
-    jeromq  : 'org.zeromq:jeromq:0.5.4',
-    protobuf: 'com.google.protobuf:protobuf-java:4.28.2',
-    protoc  : 'com.google.protobuf:protoc:4.28.2',
-    jopt    : 'net.sf.jopt-simple:jopt-simple:5.0.4',
-    jsr305  : 'com.google.code.findbugs:jsr305:3.0.2'
+    jeromq               : 'org.zeromq:jeromq:0.5.4',
+    protobuf             : 'com.google.protobuf:protobuf-java:4.28.2',
+    protoc               : 'com.google.protobuf:protoc:4.28.2',
+    jopt                 : 'net.sf.jopt-simple:jopt-simple:5.0.4',
+    jsr305               : 'com.google.code.findbugs:jsr305:3.0.2',
+    prometheus_client    : 'io.prometheus:simpleclient:0.16.0',
+    prometheus_httpserver: 'io.prometheus:simpleclient_httpserver:0.16.0',
+    prometheus_hotspot   : 'io.prometheus:simpleclient_hotspot:0.16.0'
 ]
 
 ext.test_libs = [
@@ -94,6 +97,9 @@ dependencies {
     implementation 'org.jlab.coda:jinflux:1.0-SNAPSHOT'
     implementation 'org.jetbrains:annotations:24.0.1'
     implementation libs.jeromq // <-- explicitly added for runtime
+    implementation libs.prometheus_client
+    implementation libs.prometheus_httpserver
+    implementation libs.prometheus_hotspot
 
     constraints {
         codenarc(test_libs.groovy)
