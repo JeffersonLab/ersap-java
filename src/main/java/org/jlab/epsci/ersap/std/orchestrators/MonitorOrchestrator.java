@@ -14,10 +14,13 @@ import org.jlab.epsci.ersap.base.ErsapUtil;
 import org.jlab.epsci.ersap.base.DataRingAddress;
 import org.jlab.epsci.ersap.base.DataRingTopic;
 import org.jlab.epsci.ersap.base.DpeName;
+import org.jlab.epsci.ersap.engine.EngineData;
 import org.jlab.coda.xmsg.core.xMsgConstants;
+import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -187,6 +190,55 @@ public class MonitorOrchestrator implements AutoCloseable {
                 .withDataTypes(handler.dataTypes())
                 .start(handler::handleEvent);
         Logging.info("Subscribed to service reports with %s", getTopicLog(ringTopic));
+    }
+
+
+    /**
+     * Listen to user-defined metrics published by all engines via
+     * {@code EngineMetricsPublisher}.
+     *
+     * @param handler user metrics handler
+     * @throws ErsapException if the subscription could not be started
+     */
+    public void listenUserMetrics(UserMetricsHandler handler) throws ErsapException {
+        orchestrator.listen()
+                .userMetrics()
+                .withDataTypes(handler.dataTypes())
+                .start(msg -> dispatchUserMetrics(msg, handler));
+        Logging.info("Subscribed to all user engine metrics");
+    }
+
+
+    /**
+     * Listen to user-defined metrics filtered by session and engine name.
+     *
+     * @param session DPE session to filter on
+     * @param engine  canonical engine name to filter on
+     * @param handler user metrics handler
+     * @throws ErsapException if the subscription could not be started
+     */
+    public void listenUserMetrics(String session, String engine, UserMetricsHandler handler)
+            throws ErsapException {
+        orchestrator.listen()
+                .userMetrics(session, engine)
+                .withDataTypes(handler.dataTypes())
+                .start(msg -> dispatchUserMetrics(msg, handler));
+        Logging.info("Subscribed to user metrics for engine \"%s\" session \"%s\"",
+                engine, session);
+    }
+
+
+    private void dispatchUserMetrics(EngineData data, UserMetricsHandler handler) {
+        try {
+            // topic format: userMetrics:<session>:<engine>
+            String[] parts = data.getEngineName().split(xMsgConstants.TOPIC_SEP, 3);
+            String session = parts.length > 1 ? parts[1] : "";
+            String engine  = parts.length > 2 ? parts[2] : "";
+            Map<String, Object> metrics = new JSONObject((String) data.getData()).toMap();
+            handler.handleMetrics(session, engine, metrics);
+        } catch (Exception e) {
+            Logging.error("Error dispatching user metrics: %s", e.getMessage());
+        }
     }
 
 

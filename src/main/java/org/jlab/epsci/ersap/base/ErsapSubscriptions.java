@@ -16,6 +16,7 @@ import org.jlab.epsci.ersap.engine.EngineDataType;
 import org.jlab.epsci.ersap.engine.EngineStatus;
 import org.jlab.epsci.ersap.util.ArgUtils;
 import org.jlab.coda.xmsg.core.xMsgCallBack;
+import org.jlab.coda.xmsg.core.xMsgConstants;
 import org.jlab.coda.xmsg.core.xMsgSubscription;
 import org.jlab.coda.xmsg.core.xMsgTopic;
 import org.json.JSONObject;
@@ -402,6 +403,32 @@ public class ErsapSubscriptions {
         public ServiceSubscription dataRing(DataRingTopic ringTopic) {
             ArgUtils.requireNonNull(ringTopic, "topic");
             xMsgTopic topic = buildMatchingTopic(ErsapConstants.MONITOR_REPORT, ringTopic.topic());
+            return new ServiceSubscription(base, subscriptions, dataTypes, frontEnd, topic);
+        }
+
+        /**
+         * A subscription for user-defined metrics published by all engines to
+         * the Monitor FE via {@code EngineMetricsPublisher}.
+         *
+         * @return a subscription to listen all user metrics
+         */
+        public ServiceSubscription userMetrics() {
+            xMsgTopic topic = MessageUtil.buildTopic(ErsapConstants.USER_METRICS, "");
+            return new ServiceSubscription(base, subscriptions, dataTypes, frontEnd, topic);
+        }
+
+        /**
+         * A subscription for user-defined metrics filtered by session and engine.
+         *
+         * @param session the DPE session to filter on
+         * @param engine  the canonical engine name to filter on
+         * @return a subscription to listen user metrics for the given engine
+         */
+        public ServiceSubscription userMetrics(String session, String engine) {
+            ArgUtils.requireNonNull(session, "session");
+            ArgUtils.requireNonNull(engine, "engine");
+            String keyword = session + xMsgConstants.TOPIC_SEP + engine;
+            xMsgTopic topic = buildMatchingTopic(ErsapConstants.USER_METRICS, keyword);
             return new ServiceSubscription(base, subscriptions, dataTypes, frontEnd, topic);
         }
     }

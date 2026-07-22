@@ -18,12 +18,16 @@ import org.jlab.epsci.ersap.base.DpeName;
 import org.jlab.epsci.ersap.engine.Engine;
 import org.jlab.epsci.ersap.engine.EngineData;
 import org.jlab.epsci.ersap.engine.EngineDataType;
+import org.jlab.epsci.ersap.engine.EngineMetricsPublisher;
 import org.jlab.epsci.ersap.engine.EngineStatus;
 import org.jlab.coda.xmsg.core.xMsgConstants;
 import org.jlab.coda.xmsg.core.xMsgMessage;
 import org.jlab.coda.xmsg.core.xMsgTopic;
 import org.jlab.coda.xmsg.data.xMsgM.xMsgMeta;
+import org.json.JSONObject;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -138,6 +142,7 @@ class ServiceEngine {
         try {
             inData = getEngineData(message);
             parseComposition(inData);
+            EngineMetricsPublisher.clear();
             outData = executeEngine(inData);
 
             if (outData.getStatusSeverity() == 13) {
@@ -185,6 +190,7 @@ class ServiceEngine {
         } else {
             sendResult(outData, getLinks(inData, outData));
         }
+        sendUserMetrics();
     }
 
     private void parseComposition(EngineData inData) throws ErsapException {
@@ -308,6 +314,29 @@ class ServiceEngine {
                 + xMsgConstants.TOPIC_SEP + base.getEngine());
             xMsgMessage transit = DataUtil.serialize(topic, data, engine.getOutputDataTypes());
             base.sendUncheck(monitorFe.getProxyAddress(), transit);
+        }
+    }
+
+    private void sendUserMetrics() {
+        if (monitorFe == null) {
+            return;
+        }
+        try {
+            Map<String, Object> metrics = EngineMetricsPublisher.drain();
+            if (metrics.isEmpty()) {
+                return;
+            }
+            String json = new JSONObject(metrics).toString();
+            EngineData metricData = new EngineData();
+            metricData.setData(EngineDataType.JSON.mimeType(), json);
+            xMsgTopic topic = xMsgTopic.wrap(ErsapConstants.USER_METRICS
+                    + xMsgConstants.TOPIC_SEP + sysReport.getSession()
+                    + xMsgConstants.TOPIC_SEP + base.getEngine());
+            xMsgMessage msg = DataUtil.serialize(topic, metricData,
+                    Collections.singleton(EngineDataType.JSON));
+            base.sendUncheck(monitorFe.getProxyAddress(), msg);
+        } catch (Exception e) {
+            Logging.error("Could not send user metrics for %s: %s", base.getName(), e.getMessage());
         }
     }
 

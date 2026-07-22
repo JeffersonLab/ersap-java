@@ -50,6 +50,8 @@ public final class ErsapConstants {
     public static final String DPE_REPORT = "dpeReport";
     /** ring string. */
     public static final String MONITOR_REPORT = "ring";
+    /** userMetrics string. */
+    public static final String USER_METRICS = "userMetrics";
 
     /** container string. */
     public static final String CONTAINER = "container";

@@ -4,8 +4,9 @@
  * Author gyurjyan
  */
 
-package org.jlab.epsci.ersap.examples.engines;
+package org.jlab.epsci.ersap.examples.engines.test;
 
+import org.jlab.epsci.ersap.base.ErsapUtil;
 import org.jlab.epsci.ersap.engine.Engine;
 import org.jlab.epsci.ersap.engine.EngineData;
 import org.jlab.epsci.ersap.engine.EngineDataType;
@@ -13,44 +14,26 @@ import org.jlab.epsci.ersap.engine.EngineDataType;
 import java.util.Set;
 
 /**
- * Factorial calculating service engine
- * Created by   on  2 16.
+ * User engine class example.
+ *
+ *
  */
-public class Factorial implements Engine {
-
-    private double fact(int n) {
-        double result;
-        if (n == 1) {
-            return 1;
-        }
-        result = fact(n - 1) * n;
-        return result;
+public class E2 implements Engine {
+    @Override
+    public EngineData execute(EngineData x) {
+        return x;
     }
 
     @Override
-    public EngineData configure(EngineData input) {
-        return null;
+    public EngineData executeGroup(Set<EngineData> x) {
+        System.out.println("E2 engine group execute...");
+        return x.iterator().next();
     }
 
     @Override
-    public EngineData execute(EngineData input) {
-        fact(7777);
-        return input;
-    }
-
-    @Override
-    public EngineData executeGroup(Set<EngineData> inputs) {
-        return null;
-    }
-
-    @Override
-    public Set<EngineDataType> getInputDataTypes() {
-        return null;
-    }
-
-    @Override
-    public Set<EngineDataType> getOutputDataTypes() {
-        return null;
+    public EngineData configure(EngineData x) {
+        System.out.println("E2 engine configure...");
+        return x;
     }
 
     @Override
@@ -59,18 +42,28 @@ public class Factorial implements Engine {
     }
 
     @Override
+    public Set<EngineDataType> getInputDataTypes() {
+        return ErsapUtil.buildDataTypes(EngineDataType.STRING);
+    }
+
+    @Override
+    public Set<EngineDataType> getOutputDataTypes() {
+        return ErsapUtil.buildDataTypes(EngineDataType.STRING);
+    }
+
+    @Override
     public String getDescription() {
-        return null;
+        return "Sample service E2";
     }
 
     @Override
     public String getVersion() {
-        return null;
+        return "1.0";
     }
 
     @Override
     public String getAuthor() {
-        return null;
+        return "Vardan Gyurgyan";
     }
 
     @Override

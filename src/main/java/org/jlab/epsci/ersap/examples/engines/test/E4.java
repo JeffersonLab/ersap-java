@@ -4,7 +4,7 @@
  * Author gyurjyan
  */
 
-package org.jlab.epsci.ersap.examples.engines;
+package org.jlab.epsci.ersap.examples.engines.test;
 
 import org.jlab.epsci.ersap.base.core.ErsapConstants;
 import org.jlab.epsci.ersap.base.ErsapUtil;
@@ -18,10 +18,8 @@ import java.util.Set;
  * User engine class example.
  *
  *
- *
- *     15
  */
-public class E3 implements Engine {
+public class E4 implements Engine {
 
     private long nr = 0;
     private long t1;
@@ -38,8 +36,8 @@ public class E3 implements Engine {
             long dt = t2 - t1;
             double pt = (double) dt / (double) nr;
             long pr = (nr * 1000) / dt;
-            System.out.println("E3 processing time = " + pt + " ms");
-            System.out.println("E3 rate = " + pr + " Hz");
+            System.out.println("E4 processing time = " + pt + " ms");
+            System.out.println("E4 rate = " + pr + " Hz");
             nr = 0;
         }
         return x;
@@ -47,13 +45,13 @@ public class E3 implements Engine {
 
     @Override
     public EngineData executeGroup(Set<EngineData> x) {
-        System.out.println("E3 engine group execute...");
+        System.out.println("E4 engine group execute...");
         return x.iterator().next();
     }
 
     @Override
     public EngineData configure(EngineData x) {
-        System.out.println("E3 engine configure...");
+        System.out.println("E4 engine configure...");
         return x;
     }
 
@@ -74,7 +72,7 @@ public class E3 implements Engine {
 
     @Override
     public String getDescription() {
-        return "Sample service E3";
+        return "Sample service E4";
     }
 
     @Override
