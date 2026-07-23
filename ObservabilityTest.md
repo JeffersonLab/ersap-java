@@ -27,7 +27,9 @@ how to observe both standard DPE metrics and the custom `event_rate_hz` user met
 - ERSAP built and installed: `$ERSAP_HOME` points to the installation directory
 - The three services are on the classpath (`$ERSAP_HOME/services/`)
 - Both nodes can reach each other on the xMsg proxy port (default **7111**)
-- Replace `<monfe-host>` and `<proc-host>` with the actual hostnames or IP addresses
+- Replace `<monfe-ip>` and `<proc-host>` with actual **IP addresses** (dotted-decimal).
+  ERSAP canonical names only accept IP addresses, not hostnames. Use `127.0.0.1` for
+  localhost. Running `hostname -I` or `ifconfig` will give you the address to use.
 
 ---
 
@@ -39,13 +41,13 @@ for monitoring traffic. It is started without `--fe-host`, which makes it the fr
 ```bash
 # Node A — one terminal
 export ERSAP_HOME=/path/to/ersap
-j_dpe --host <monfe-host> --session test
+j_dpe --host <monfe-ip> --session test
 ```
 
 Expected console output:
 ```
  Session          = test
- Front-end host   = <monfe-host>
+ Front-end host   = <monfe-ip>
  ...
 [INFO] DPE started
 ```
@@ -87,7 +89,7 @@ mime-types:
 ```bash
 # Node B — one terminal
 export ERSAP_HOME=/path/to/ersap
-export ERSAP_MONITOR_FE="<monfe-host>%7111_java"
+export ERSAP_MONITOR_FE="<monfe-ip>%7111_java"
 ersap-shell
 ```
 
@@ -117,7 +119,7 @@ ersap> run local
 
 `run local` now:
 1. Starts one processing DPE on `<proc-host>` (acting as its own local front-end) with
-   `--session test` and `ERSAP_MONITOR_FE=<monfe-host>%7111_java` in its environment
+   `--session test` and `ERSAP_MONITOR_FE=<monfe-ip>%7111_java` in its environment
 2. Deploys `SourceOfDoubles`, `EventRateMonitor`, and `DoubleDumpSink` into that DPE
 3. Launches the orchestrator to drive event processing
 
@@ -127,7 +129,7 @@ Node B.
 Expected output from the shell after `run local`:
 ```
  Session          = test
- Using monitoring front-end <monfe-host>%7111_java
+ Using monitoring front-end <monfe-ip>%7111_java
  ...
 [INFO] DPE started
 [INFO] Deploying services...
@@ -141,18 +143,18 @@ Expected output from the shell after `run local`:
 `TestMonitor` subscribes to the Monitor FE proxy and prints all received reports to stdout.
 
 ```bash
-# Node A (or any node that can reach <monfe-host>)
+# Node A (or any node that can reach <monfe-ip>)
 java -cp "$ERSAP_HOME/lib/*:$ERSAP_HOME/services/*" \
-     org.jlab.epsci.ersap.examples.TestMonitor <monfe-host> test
+     org.jlab.epsci.ersap.examples.TestMonitor <monfe-ip> test
 ```
 
 The two arguments are:
-- `<monfe-host>` — where the Monitor FE proxy is running
+- `<monfe-ip>` — where the Monitor FE proxy is running
 - `test` — the session to filter on; must match `--session` used by the processing DPE
 
 Expected startup line:
 ```
-TestMonitor listening on <monfe-host>  (session=test) — press Ctrl-C to stop
+TestMonitor listening on <monfe-ip>  (session=test) — press Ctrl-C to stop
 ```
 
 ---
