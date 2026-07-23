@@ -418,6 +418,18 @@ public class ErsapSubscriptions {
         }
 
         /**
+         * A subscription for user-defined metrics filtered by session.
+         *
+         * @param session the DPE session to filter on
+         * @return a subscription to listen user metrics for the given session
+         */
+        public ServiceSubscription userMetrics(String session) {
+            ArgUtils.requireNonNull(session, "session");
+            xMsgTopic topic = buildMatchingTopic(ErsapConstants.USER_METRICS, session);
+            return new ServiceSubscription(base, subscriptions, dataTypes, frontEnd, topic);
+        }
+
+        /**
          * A subscription for user-defined metrics filtered by session and engine.
          *
          * @param session the DPE session to filter on

@@ -210,6 +210,23 @@ public class MonitorOrchestrator implements AutoCloseable {
 
 
     /**
+     * Listen to user-defined metrics filtered by session.
+     *
+     * @param session DPE session to filter on
+     * @param handler user metrics handler
+     * @throws ErsapException if the subscription could not be started
+     */
+    public void listenUserMetrics(String session, UserMetricsHandler handler)
+            throws ErsapException {
+        orchestrator.listen()
+                .userMetrics(session)
+                .withDataTypes(handler.dataTypes())
+                .start(msg -> dispatchUserMetrics(msg, handler));
+        Logging.info("Subscribed to user metrics with session \"%s\"", session);
+    }
+
+
+    /**
      * Listen to user-defined metrics filtered by session and engine name.
      *
      * @param session DPE session to filter on
