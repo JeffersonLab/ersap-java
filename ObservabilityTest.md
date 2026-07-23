@@ -6,16 +6,26 @@ This document describes how to run the test pipeline
 SourceOfDoubles → EventRateMonitor → DoubleDumpSink
 ```
 
-across two nodes — a **Monitor FE DPE** (Node A) and a **Processing DPE** (Node B) — and
+across two nodes — a **Monitor FE DPE** (Node A) and a **Processing node** (Node B) — and
 how to observe both standard DPE metrics and the custom `event_rate_hz` user metric via a
 `MonitorOrchestrator` subscriber.
+
+**How the DPEs are started:**
+
+- Node A runs one DPE acting as the **Monitor FE** — a dedicated message broker for
+  monitoring traffic only.
+- Node B uses `ersap-shell` → `run local`, which starts **one processing DPE** (acting as
+  its own local front-end) plus the orchestrator in a single step. There is no separate
+  manual `j_dpe` invocation on Node B. Setting `ERSAP_MONITOR_FE` before launching
+  `ersap-shell` is sufficient — `run local` automatically passes that variable to the DPE
+  it starts.
 
 ---
 
 ## Prerequisites
 
 - ERSAP built and installed: `$ERSAP_HOME` points to the installation directory
-- The three services are on the classpath (`$ERSAP_HOME/services/` or `$CLASSPATH`)
+- The three services are on the classpath (`$ERSAP_HOME/services/`)
 - Both nodes can reach each other on the xMsg proxy port (default **7111**)
 - Replace `<monfe-host>` and `<proc-host>` with the actual hostnames or IP addresses
 
@@ -23,11 +33,11 @@ how to observe both standard DPE metrics and the custom `event_rate_hz` user met
 
 ## Step 1 — Start the Monitor FE DPE (Node A)
 
-The Monitor FE is a standalone front-end DPE whose only job is to act as a message broker
-for monitoring traffic. It is started **without** `--fe-host`, which makes it the front-end.
+The Monitor FE is a standalone front-end DPE whose sole job is to act as a message broker
+for monitoring traffic. It is started without `--fe-host`, which makes it the front-end.
 
 ```bash
-# Node A
+# Node A — one terminal
 export ERSAP_HOME=/path/to/ersap
 j_dpe --host <monfe-host> --session test
 ```
@@ -44,58 +54,14 @@ Leave this terminal running. The Monitor FE proxy is now listening on port **711
 
 ---
 
-## Step 2 — Start the Processing DPE with Services (Node B)
+## Step 2 — Start the Processing DPE and Services (Node B)
 
-The processing DPE connects to the regular ERSAP front-end (which in a standalone test can
-be the same node as the Monitor FE, or a separate front-end). It is told about the Monitor
-FE via the `ERSAP_MONITOR_FE` environment variable so that every `dpeReport` and
-`userMetrics` message is duplicated to the Monitor FE proxy.
+`run local` inside `ersap-shell` starts the processing DPE and the orchestrator together.
+It reads `ERSAP_MONITOR_FE` from the shell environment and passes it to the DPE it creates,
+so the DPE automatically duplicates all `dpeReport` and `userMetrics` messages to the
+Monitor FE proxy on Node A.
 
-```bash
-# Node B
-export ERSAP_HOME=/path/to/ersap
-export ERSAP_MONITOR_FE="<monfe-host>%7111_java"
-
-j_dpe --host <proc-host> --fe-host <monfe-host> --session test --report 5
-```
-
-- `--fe-host <monfe-host>` — makes this a worker DPE connecting to the front-end
-- `--report 5` — publish a `dpeReport` every 5 seconds (default is 10; shorter helps
-  during testing)
-- `ERSAP_MONITOR_FE` — tells `ServiceEngine` and `Dpe.ReportService` to also publish
-  to the Monitor FE proxy
-
-Expected console output:
-```
- Session          = test
- Front-end host   = <monfe-host>
- Using monitoring front-end <monfe-host>%7111_java
- ...
-[INFO] DPE started
-```
-
----
-
-## Step 3 — Deploy and Start the Services
-
-In a **third terminal on Node B**, use the `ersap-shell` interactive shell to deploy the
-three services and start the pipeline.
-
-### 3a — Launch the shell
-
-```bash
-export ERSAP_HOME=/path/to/ersap
-ersap-shell
-```
-
-### 3b — Configure the session and front-end inside the shell
-
-```
-ersap> set session test
-ersap> set frontend <monfe-host>
-```
-
-### 3c — Create the services YAML file
+### 2a — Create the services YAML file
 
 Create `$ERSAP_USER_DATA/config/double-pipeline.yml`:
 
@@ -116,123 +82,86 @@ mime-types:
   - binary/data-double
 ```
 
-### 3d — Point the shell at the config and a dummy file list
+### 2b — Launch ersap-shell with ERSAP_MONITOR_FE set
+
+```bash
+# Node B — one terminal
+export ERSAP_HOME=/path/to/ersap
+export ERSAP_MONITOR_FE="<monfe-host>%7111_java"
+ersap-shell
+```
+
+`ERSAP_MONITOR_FE` must be set **before** launching the shell. `run local` reads this
+variable and injects it into the environment of the DPE process it spawns.
+
+### 2c — Configure the shell
+
+Inside `ersap-shell`:
 
 ```
+ersap> set session      test
 ersap> set servicesFile $ERSAP_USER_DATA/config/double-pipeline.yml
 ersap> set fileList     $ERSAP_USER_DATA/config/files.txt
 ersap> set inputDir     $ERSAP_USER_DATA/data/input
 ersap> set outputDir    $ERSAP_USER_DATA/data/output
 ```
 
-(`files.txt` can contain a single dummy filename since `SourceOfDoubles` generates data
-internally.)
+(`files.txt` can contain a single dummy filename — `SourceOfDoubles` generates data
+internally and does not actually read input files.)
 
-### 3e — Run locally
+### 2d — Run
 
 ```
 ersap> run local
 ```
 
-The shell deploys `SourceOfDoubles`, `EventRateMonitor`, and `DoubleDumpSink` on the
-processing DPE and starts the orchestrator. Processing begins immediately.
+`run local` now:
+1. Starts one processing DPE on `<proc-host>` (acting as its own local front-end) with
+   `--session test` and `ERSAP_MONITOR_FE=<monfe-host>%7111_java` in its environment
+2. Deploys `SourceOfDoubles`, `EventRateMonitor`, and `DoubleDumpSink` into that DPE
+3. Launches the orchestrator to drive event processing
+
+There is **no second DPE**. The processing DPE started by `run local` is the only one on
+Node B.
+
+Expected output from the shell after `run local`:
+```
+ Session          = test
+ Using monitoring front-end <monfe-host>%7111_java
+ ...
+[INFO] DPE started
+[INFO] Deploying services...
+[INFO] Starting orchestrator...
+```
 
 ---
 
-## Step 4 — Start the MonitorOrchestrator (Node A or any node)
+## Step 3 — Start TestMonitor (Node A or any node)
 
-The `MonitorOrchestrator` subscribes to the Monitor FE proxy and prints everything it
-receives. Below is a minimal standalone subscriber that listens to both `dpeReport` and
-`userMetrics` topics.
-
-Create `TestMonitor.java` (or run it from a test class):
-
-```java
-import org.jlab.epsci.ersap.base.ContainerRuntimeData;
-import org.jlab.epsci.ersap.base.DataRingAddress;
-import org.jlab.epsci.ersap.base.DpeRegistrationData;
-import org.jlab.epsci.ersap.base.DpeRuntimeData;
-import org.jlab.epsci.ersap.base.ServiceRuntimeData;
-import org.jlab.epsci.ersap.engine.EngineDataType;
-import org.jlab.epsci.ersap.std.orchestrators.DpeReportHandler;
-import org.jlab.epsci.ersap.std.orchestrators.MonitorOrchestrator;
-import org.jlab.epsci.ersap.std.orchestrators.UserMetricsHandler;
-
-import java.util.Map;
-import java.util.Set;
-
-public class TestMonitor {
-
-    public static void main(String[] args) throws Exception {
-
-        DataRingAddress monitorFe = new DataRingAddress("<monfe-host>");
-        MonitorOrchestrator monitor = new MonitorOrchestrator(monitorFe);
-
-        // ── DPE system metrics ──────────────────────────────────────────────
-        monitor.listenDpeReports("test", new DpeReportHandler() {
-            @Override
-            public void handleReport(DpeRegistrationData reg, DpeRuntimeData runtime) {
-
-                System.out.printf("%n=== DPE Report: %s  session=%s ===%n",
-                        runtime.name(), reg.session());
-                System.out.printf("  CPU usage   : %.1f%%%n",  runtime.cpuUsage() * 100);
-                System.out.printf("  Memory      : %.1f MB%n", runtime.memoryUsage() / 1_048_576.0);
-                System.out.printf("  System load : %.2f%n",    runtime.systemLoad());
-                System.out.printf("  Cores       : %d%n",      reg.numCores());
-
-                for (ContainerRuntimeData container : runtime.containers()) {
-                    System.out.printf("  Container: %s%n", container.name());
-                    for (ServiceRuntimeData svc : container.services()) {
-                        long execMs = svc.executionTime() / 1_000;   // µs → ms
-                        System.out.printf("    Service        : %s%n", svc.name());
-                        System.out.printf("      requests     : %d%n", svc.numRequests());
-                        System.out.printf("      failures     : %d%n", svc.numFailures());
-                        System.out.printf("      exec time    : %d ms (cumulative)%n", execMs);
-                        System.out.printf("      shm reads    : %d%n", svc.sharedMemoryReads());
-                        System.out.printf("      shm writes   : %d%n", svc.sharedMemoryWrites());
-                        System.out.printf("      bytes recv   : %d%n", svc.bytesReceived());
-                        System.out.printf("      bytes sent   : %d%n", svc.bytesSent());
-                    }
-                }
-            }
-        });
-
-        // ── User metrics from EventRateMonitor ──────────────────────────────
-        monitor.listenUserMetrics("test", new UserMetricsHandler() {
-            @Override
-            public Set<EngineDataType> dataTypes() {
-                return Set.of(EngineDataType.JSON);
-            }
-
-            @Override
-            public void handleMetrics(String session, String engine,
-                                      Map<String, Object> metrics) {
-                System.out.printf("%n--- User Metrics: %s  session=%s ---%n",
-                        engine, session);
-                metrics.forEach((k, v) -> System.out.printf("  %-22s: %s%n", k, v));
-            }
-        });
-
-        System.out.println("MonitorOrchestrator listening on " + monitorFe
-                + "  (session=test) — press Ctrl-C to stop");
-        Thread.currentThread().join();   // block forever
-    }
-}
-```
-
-Run it:
+`TestMonitor` subscribes to the Monitor FE proxy and prints all received reports to stdout.
 
 ```bash
-java -cp "$ERSAP_HOME/lib/*:$ERSAP_HOME/services/*" TestMonitor
+# Node A (or any node that can reach <monfe-host>)
+java -cp "$ERSAP_HOME/lib/*:$ERSAP_HOME/services/*" \
+     org.jlab.epsci.ersap.examples.TestMonitor <monfe-host> test
+```
+
+The two arguments are:
+- `<monfe-host>` — where the Monitor FE proxy is running
+- `test` — the session to filter on; must match `--session` used by the processing DPE
+
+Expected startup line:
+```
+TestMonitor listening on <monfe-host>  (session=test) — press Ctrl-C to stop
 ```
 
 ---
 
-## Step 5 — Expected Console Output
+## Step 4 — Expected Console Output
 
-### 5a — DPE system report (every 5 seconds)
+### 4a — DPE system report (every 10 seconds by default)
 
-Produced by `listenDpeReports`. One block per report period per processing DPE:
+One block per report period, produced by `listenDpeReports`:
 
 ```
 === DPE Report: <proc-host>%7111_java  session=test ===
@@ -274,17 +203,17 @@ Produced by `listenDpeReports`. One block per report period per processing DPE:
 | `CPU usage` | Non-zero; scales with throughput |
 | `Memory` | Stable; no steady upward drift |
 | `System load` | Proportional to active threads |
-| `requests` (all services) | All three counts increase together at the same rate |
+| `requests` (all three services) | All three counts increase together at the same rate |
 | `failures` | Zero for a healthy run |
-| `exec time` (EventRateMonitor) | Growing; divide by `requests` for avg µs/event |
-| `shm reads/writes` | Non-zero — confirms services are talking via shared memory (same DPE) |
-| `bytes recv/sent` | Zero for intra-DPE chains; non-zero if services span DPEs |
+| `exec time` (EventRateMonitor) | Growing; divide by `requests` for average µs/event |
+| `shm reads/writes` | Non-zero — confirms services communicate via shared memory (same DPE) |
+| `bytes recv/sent` | Zero for an intra-DPE chain |
 
 ---
 
-### 5b — User metrics from EventRateMonitor (every ~1 second)
+### 4b — User metrics from EventRateMonitor (every ~1 second)
 
-Produced by `listenUserMetrics`. One block per measurement window:
+One block per measurement window, produced by `listenUserMetrics`:
 
 ```
 --- User Metrics: <proc-host>%7111_java:<username>:EventRateMonitor  session=test ---
@@ -297,31 +226,23 @@ Produced by `listenUserMetrics`. One block per measurement window:
 
 | Field | Meaning |
 |---|---|
-| `event_rate_hz` | Aggregate throughput of all pool instances (events/sec). Expect values in the thousands for simple double passing. |
-| `events_in_window` | Raw count in the last 1-second window. Should roughly equal `event_rate_hz`. |
-| `total_events` | Cumulative since service start. Should increase monotonically and match `n_requests` in the DPE report. |
+| `event_rate_hz` | Aggregate throughput of all pool instances (events/sec) |
+| `events_in_window` | Raw count in the last 1-second window; should roughly equal `event_rate_hz` |
+| `total_events` | Cumulative since service start; should match `n_requests` in the DPE report |
 
 Because `EventRateMonitor` uses shared static counters with a CAS-based window handoff,
-**exactly one** user metrics message is published per second regardless of the pool size.
+exactly **one** user metrics message is published per second regardless of pool size.
 
 ---
 
-## Step 6 — Verifying Consistency Between Report Types
+## Step 5 — Verifying Consistency Between Report Types
 
-Cross-check these values across the two report types to confirm everything is wired correctly:
-
-1. **Request count matches**: `total_events` from user metrics should match
-   `n_requests` for `EventRateMonitor` in the DPE report (both are cumulative since start).
-
-2. **Rate is plausible**: `event_rate_hz` × `report_period_seconds` should roughly equal
-   the increase in `n_requests` between two consecutive DPE reports.
-
-3. **Shared memory confirms intra-DPE chain**: `shm_reads` and `shm_writes` for
-   `EventRateMonitor` should equal `n_requests`, confirming data never leaves the DPE.
-
-4. **Zero failures**: `n_failures = 0` for all three services confirms no errors in the
-   chain and that `sendUserMetrics()` exceptions (if any) are being caught and logged,
-   not propagated to the data plane.
+| Check | How |
+|---|---|
+| Request count matches | `total_events` in user metrics ≈ `n_requests` for `EventRateMonitor` in DPE report |
+| Rate is plausible | `event_rate_hz` × report-period-seconds ≈ increase in `n_requests` between two DPE reports |
+| Intra-DPE chain confirmed | `shm_reads` and `shm_writes` for `EventRateMonitor` equal `n_requests` |
+| No data-plane impact | `n_failures = 0` for all three services |
 
 ---
 
@@ -329,9 +250,9 @@ Cross-check these values across the two report types to confirm everything is wi
 
 | Symptom | Likely cause |
 |---|---|
-| No DPE report received | `ERSAP_MONITOR_FE` not set on Node B, or wrong host/port |
-| No user metrics received | `ERSAP_MONITOR_FE` not set, or `EventRateMonitor` not in composition |
-| `event_rate_hz` is ~1/5th of expected | Old non-static version of `EventRateMonitor` in classpath; verify the deployed jar |
+| No DPE report received | `ERSAP_MONITOR_FE` was not set before launching `ersap-shell`, or wrong host/port |
+| No user metrics received | `ERSAP_MONITOR_FE` not set, or `EventRateMonitor` not in the composition |
+| `event_rate_hz` is ~1/5th of expected | Old non-static `EventRateMonitor` on classpath; verify the deployed jar |
 | `total_events` doesn't match `n_requests` | Normal for the first few seconds while windows align; should converge |
-| `shm_reads = 0` | Services deployed in separate containers or separate DPEs; use one container |
-| Memory grows steadily | Engine or reader leaking objects; check `SourceOfDoubles.close()` |
+| `shm_reads = 0` | Services in separate containers or separate DPEs; ensure one container |
+| Memory grows steadily | Leak in engine or reader; check `SourceOfDoubles.close()` |
