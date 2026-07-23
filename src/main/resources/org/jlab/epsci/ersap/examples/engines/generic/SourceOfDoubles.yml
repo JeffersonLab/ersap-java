@@ -1,0 +1,13 @@
+---
+name: SourceOfDoubles
+engine: org.jlab.epsci.ersap.examples.engines.generic.SourceOfDoubles
+type: java
+
+author: Vardan Gyurjyan
+email: vardan.gyurjyan@jlab.org
+
+version: 1.0
+description: |
+  Generates a stream of random double values (1.0–100.0) as the source
+  for the ERSAP test pipeline. Produces Integer.MAX_VALUE events and
+  requires no real input file — the file list entry is a dummy placeholder.

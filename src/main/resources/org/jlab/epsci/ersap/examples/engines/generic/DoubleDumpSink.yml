@@ -1,0 +1,13 @@
+---
+name: DoubleDumpSink
+engine: org.jlab.epsci.ersap.examples.engines.generic.DoubleDumpSink
+type: java
+
+author: Vardan Gyurjyan
+email: vardan.gyurjyan@jlab.org
+
+version: 1.0
+description: |
+  Terminal sink service that receives double values from the pipeline and
+  discards them (no-op write). Used as the final stage in the
+  SourceOfDoubles → EventRateMonitor → DoubleDumpSink test composition.
