@@ -371,7 +371,7 @@ public class ClusterFinderEngine implements Engine {
 }
 ```
 
-**Resulting Monitor FE message** (on topic `userMetrics:prod:localhost%7111_java:myContainer:ClusterFinderEngine`):
+**Resulting Monitor FE message** (on topic `userMetrics:prod:localhost%7771_java:myContainer:ClusterFinderEngine`):
 ```json
 {
   "clusters_this_event": 7,

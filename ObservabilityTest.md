@@ -26,7 +26,7 @@ how to observe both standard DPE metrics and the custom `event_rate_hz` user met
 
 - ERSAP built and installed: `$ERSAP_HOME` points to the installation directory
 - The three services are on the classpath (`$ERSAP_HOME/services/`)
-- Both nodes can reach each other on the xMsg proxy port (default **7111**)
+- Both nodes can reach each other on the xMsg proxy port (default **7771**)
 - Replace `<monfe-ip>` and `<proc-host>` with actual **IP addresses** (dotted-decimal).
   ERSAP canonical names only accept IP addresses, not hostnames. Use `127.0.0.1` for
   localhost. Running `hostname -I` or `ifconfig` will give you the address to use.
@@ -52,7 +52,7 @@ Expected console output:
 [INFO] DPE started
 ```
 
-Leave this terminal running. The Monitor FE proxy is now listening on port **7111**.
+Leave this terminal running. The Monitor FE proxy is now listening on port **7771**.
 
 ---
 
@@ -89,7 +89,7 @@ mime-types:
 ```bash
 # Node B — one terminal
 export ERSAP_HOME=/path/to/ersap
-export ERSAP_MONITOR_FE="<monfe-ip>%7111_java"
+export ERSAP_MONITOR_FE="<monfe-ip>%7771_java"
 ersap-shell
 ```
 
@@ -119,7 +119,7 @@ ersap> run local
 
 `run local` now:
 1. Starts one processing DPE on `<proc-host>` (acting as its own local front-end) with
-   `--session test` and `ERSAP_MONITOR_FE=<monfe-ip>%7111_java` in its environment
+   `--session test` and `ERSAP_MONITOR_FE=<monfe-ip>%7771_java` in its environment
 2. Deploys `SourceOfDoubles`, `EventRateMonitor`, and `DoubleDumpSink` into that DPE
 3. Launches the orchestrator to drive event processing
 
@@ -129,7 +129,7 @@ Node B.
 Expected output from the shell after `run local`:
 ```
  Session          = test
- Using monitoring front-end <monfe-ip>%7111_java
+ Using monitoring front-end <monfe-ip>%7771_java
  ...
 [INFO] DPE started
 [INFO] Deploying services...
@@ -166,13 +166,13 @@ TestMonitor listening on <monfe-ip>  (session=test) — press Ctrl-C to stop
 One block per report period, produced by `listenDpeReports`:
 
 ```
-=== DPE Report: <proc-host>%7111_java  session=test ===
+=== DPE Report: <proc-host>%7771_java  session=test ===
   CPU usage   : 38.4%
   Memory      : 512.3 MB
   System load : 1.72
   Cores       : 8
-  Container: <proc-host>%7111_java:<username>
-    Service        : <proc-host>%7111_java:<username>:SourceOfDoubles
+  Container: <proc-host>%7771_java:<username>
+    Service        : <proc-host>%7771_java:<username>:SourceOfDoubles
       requests     : 15000
       failures     : 0
       exec time    : 0 ms (cumulative)
@@ -180,7 +180,7 @@ One block per report period, produced by `listenDpeReports`:
       shm writes   : 15000
       bytes recv   : 0
       bytes sent   : 0
-    Service        : <proc-host>%7111_java:<username>:EventRateMonitor
+    Service        : <proc-host>%7771_java:<username>:EventRateMonitor
       requests     : 15000
       failures     : 0
       exec time    : 312 ms (cumulative)
@@ -188,7 +188,7 @@ One block per report period, produced by `listenDpeReports`:
       shm writes   : 15000
       bytes recv   : 0
       bytes sent   : 0
-    Service        : <proc-host>%7111_java:<username>:DoubleDumpSink
+    Service        : <proc-host>%7771_java:<username>:DoubleDumpSink
       requests     : 15000
       failures     : 0
       exec time    : 48 ms (cumulative)
@@ -218,7 +218,7 @@ One block per report period, produced by `listenDpeReports`:
 One block per measurement window, produced by `listenUserMetrics`:
 
 ```
---- User Metrics: <proc-host>%7111_java:<username>:EventRateMonitor  session=test ---
+--- User Metrics: <proc-host>%7771_java:<username>:EventRateMonitor  session=test ---
   event_rate_hz         : 3127.4
   events_in_window      : 3127
   total_events          : 45831
