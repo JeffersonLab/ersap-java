@@ -43,9 +43,7 @@ class RunUtils {
     }
 
     String getSession() {
-        String sessionId = config.getString(Config.SESSION);
-        String sessionDesc = config.getString(Config.DESCRIPTION);
-        return sessionId + "_" + sessionDesc;
+        return config.getString(Config.SESSION);
     }
 
     String getOutputFilePrefix() {
