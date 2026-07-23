@@ -26,10 +26,12 @@ how to observe both standard DPE metrics and the custom `event_rate_hz` user met
 
 - ERSAP built and installed: `$ERSAP_HOME` points to the installation directory
 - The three services are on the classpath (`$ERSAP_HOME/services/`)
-- Both nodes can reach each other on the xMsg proxy port (default **7771**)
+- The Monitor FE DPE listens on **port 9000** (`MONITOR_PORT`); the processing DPE uses
+  the default **port 7771** (`JAVA_PORT`). These must not be the same port.
 - Replace `<monfe-ip>` and `<proc-host>` with actual **IP addresses** (dotted-decimal).
-  ERSAP canonical names only accept IP addresses, not hostnames. Use `127.0.0.1` for
-  localhost. Running `hostname -I` or `ifconfig` will give you the address to use.
+  ERSAP canonical names only accept IP addresses, not hostnames. Running `hostname -I`
+  or `ifconfig` will give you the address to use. Do **not** use `localhost` — ERSAP
+  resolves it to the machine's network IP, which may not match what other components expect.
 
 ---
 
@@ -41,18 +43,22 @@ for monitoring traffic. It is started without `--fe-host`, which makes it the fr
 ```bash
 # Node A — one terminal
 export ERSAP_HOME=/path/to/ersap
-j_dpe --host <monfe-ip> --session test
+j_dpe --host <monfe-ip> --port 9000 --session test
 ```
+
+`--port 9000` is required. `DataRingAddress` (used by `MonitorOrchestrator` /
+`TestMonitor`) always connects to `MONITOR_PORT = 9000`. If you omit `--port 9000`,
+the Monitor FE proxy starts on 7771 and TestMonitor will see nothing.
 
 Expected console output:
 ```
- Session          = test
- Front-end host   = <monfe-ip>
+ Proxy Host       = <monfe-ip>
+ Proxy Port       = 9000
  ...
 [INFO] DPE started
 ```
 
-Leave this terminal running. The Monitor FE proxy is now listening on port **7771**.
+Leave this terminal running. The Monitor FE proxy is now listening on port **9000**.
 
 ---
 
@@ -89,7 +95,7 @@ mime-types:
 ```bash
 # Node B — one terminal
 export ERSAP_HOME=/path/to/ersap
-export ERSAP_MONITOR_FE="<monfe-ip>%7771_java"
+export ERSAP_MONITOR_FE="<monfe-ip>%9000_java"
 ersap-shell
 ```
 
