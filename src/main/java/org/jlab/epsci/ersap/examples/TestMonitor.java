@@ -64,7 +64,7 @@ public class TestMonitor {
             public void handleReport(DpeRegistrationData reg, DpeRuntimeData runtime) {
                 System.out.printf("%n=== DPE Report: %s  session=%s ===%n",
                         runtime.name(), reg.session());
-                System.out.printf("  CPU usage   : %.1f%%%n",  runtime.cpuUsage() * 100);
+                System.out.printf("  CPU usage   : %.1f%%%n",  runtime.cpuUsage());
                 System.out.printf("  Memory      : %.1f MB%n", runtime.memoryUsage() / 1_048_576.0);
                 System.out.printf("  System load : %.2f%n",    runtime.systemLoad());
                 System.out.printf("  Cores       : %d%n",      reg.numCores());
