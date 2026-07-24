@@ -327,11 +327,12 @@ class ServiceEngine {
                 return;
             }
             String json = new JSONObject(metrics).toString();
-            EngineData metricData = new EngineData();
-            metricData.setData(EngineDataType.JSON.mimeType(), json);
             xMsgTopic topic = xMsgTopic.wrap(ErsapConstants.USER_METRICS
                     + xMsgConstants.TOPIC_SEP + sysReport.getSession()
                     + xMsgConstants.TOPIC_SEP + base.getEngine());
+            EngineData metricData = new EngineData();
+            metricData.setData(EngineDataType.JSON.mimeType(), json);
+            metricData.setDescription(topic.toString());
             xMsgMessage msg = DataUtil.serialize(topic, metricData,
                     Collections.singleton(EngineDataType.JSON));
             base.sendUncheck(monitorFe.getProxyAddress(), msg);

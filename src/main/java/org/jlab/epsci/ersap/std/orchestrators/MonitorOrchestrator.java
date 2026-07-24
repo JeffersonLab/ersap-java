@@ -247,8 +247,8 @@ public class MonitorOrchestrator implements AutoCloseable {
 
     private void dispatchUserMetrics(EngineData data, UserMetricsHandler handler) {
         try {
-            // topic format: userMetrics:<session>:<engine>
-            String[] parts = data.getEngineName().split(xMsgConstants.TOPIC_SEP, 3);
+            // description carries the full topic: userMetrics:<session>:<engine>
+            String[] parts = data.getDescription().split(xMsgConstants.TOPIC_SEP, 3);
             String session = parts.length > 1 ? parts[1] : "";
             String engine  = parts.length > 2 ? parts[2] : "";
             Map<String, Object> metrics = new JSONObject((String) data.getData()).toMap();
