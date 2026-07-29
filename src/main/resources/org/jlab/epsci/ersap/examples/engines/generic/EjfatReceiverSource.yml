@@ -1,0 +1,15 @@
+---
+name: EjfatReceiverSource
+engine: org.jlab.epsci.ersap.examples.engines.generic.EjfatReceiverSource
+type: java
+
+author: Vardan Gyurjyan
+email: vardan.gyurjyan@jlab.org
+
+version: 1.0
+description: |
+  ERSAP source engine that receives fully reassembled EJFAT events from the
+  native C++ receiver (E2SAR Reassembler) over JNI and publishes each event
+  as BYTES (java.nio.ByteBuffer). Payload envelope matches
+  ejfat_receiver_actor.cpp: [data_id as double][reassembled event body].
+  Requires libEjfatReceiverJni.so on java.library.path.
