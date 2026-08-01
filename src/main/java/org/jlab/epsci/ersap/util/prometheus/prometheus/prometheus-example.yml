@@ -1,0 +1,65 @@
+# Example Prometheus scrape configuration for the ERSAP Monitor FE exporter.
+#
+# Copy the `scrape_configs` entry into your prometheus.yml, or run Prometheus
+# directly against this file:
+#
+#   prometheus --config.file=prometheus-example.yml
+#
+# 9095 is the exporter default (--prometheus-port).
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "ersap-monitor"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "localhost:9095"
+        labels:
+          # Optional: tag the whole target. Prefer this over --label when the
+          # value describes where the exporter runs rather than what it exports.
+          deployment: "lab"
+
+    # The Monitor FE republishes DPE reports every report period (10 s by
+    # default) and user metrics as fast as engines publish them. Scraping
+    # faster than the DPE report period only repeats the same samples.
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+# ---------------------------------------------------------------------------
+# Several exporters, one per Monitor FE
+# ---------------------------------------------------------------------------
+#
+#  - job_name: "ersap-monitor"
+#    static_configs:
+#      - targets: ["monfe-a.example.org:9095"]
+#        labels: {ring: "a"}
+#      - targets: ["monfe-b.example.org:9095"]
+#        labels: {ring: "b"}
+
+# ---------------------------------------------------------------------------
+# Suggested alerting rules (put them in a rule_files entry)
+# ---------------------------------------------------------------------------
+#
+# groups:
+#   - name: ersap-exporter
+#     rules:
+#       - alert: ErsapExporterDown
+#         expr: ersap_prometheus_exporter_up == 0
+#         for: 2m
+#         annotations:
+#           summary: "The ERSAP exporter is not subscribed to the Monitor FE"
+#
+#       - alert: ErsapMonitorFeSilent
+#         expr: time() - ersap_prometheus_exporter_last_message_timestamp_seconds > 120
+#         for: 5m
+#         annotations:
+#           summary: "No Monitor FE message for more than two minutes"
+#
+#       - alert: ErsapServiceFailures
+#         expr: rate(ersap_service_failures_total[5m]) > 0
+#         for: 5m
+#         annotations:
+#           summary: "{{ $labels.service }} is failing requests"
