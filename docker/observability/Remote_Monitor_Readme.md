@@ -1,18 +1,32 @@
 # ERSAP Remote Monitoring (Prometheus + Grafana)
 
 This directory holds a Prometheus + Grafana stack that visualizes the metrics
-exposed by `PrometheusReporter` (`j_pr`). It is meant to run on a separate,
-remote node — it does not need to be co-located with any DPE.
+exposed by `org.jlab.epsci.ersap.util.prometheus.PrometheusExporter`. It is
+meant to run on a separate, remote node — it does not need to be co-located
+with any DPE.
 
 ```
-Application DPEs → xMsg dpeReport → j_pr (:9200/metrics) → Prometheus → Grafana
+Application DPEs → xMsg dpeReport/userMetrics → Monitor FE → PrometheusExporter (:9095/metrics) → Prometheus → Grafana
 ```
+
+The exporter itself, its full option reference, and a complete three-node
+deployment walkthrough (pipeline nodes + Monitor FE + exporter) live outside
+this directory:
+
+* [`../../README-PROMETHEUS.md`](../../README-PROMETHEUS.md) — step-by-step
+  deployment guide, including how to start the Monitor FE and the exporter.
+* [`../../src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md`](../../src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md) —
+  exporter reference: every option, the metric catalogue, filters, reconnection
+  behaviour.
+
+This directory only covers the Prometheus + Grafana half of the stack — it
+assumes the exporter is already running somewhere.
 
 ## Contents
 
 ```
 docker-compose.yml                              Prometheus + Grafana, named volumes
-prometheus/prometheus.yml                       scrape config, points at j_pr
+prometheus/prometheus.yml                       scrape config, points at PrometheusExporter
 grafana/provisioning/datasources/datasource.yml auto-registers the Prometheus datasource
 grafana/provisioning/dashboards/dashboards.yml  tells Grafana to load dashboards from disk
 grafana/dashboards/ersap-overview.json          the ERSAP Overview dashboard
@@ -21,12 +35,15 @@ grafana/dashboards/ersap-overview.json          the ERSAP Overview dashboard
 ## Prerequisites
 
 - Docker and Docker Compose on the remote node.
-- `j_pr` already running somewhere reachable from that node (see the main
-  repo README / `scripts/unix/j_pr` for how to start it against a DPE
-  front-end). Note its host and `--metrics-port` (default `9200`).
-- Network path from this node to `<j_pr host>:<metrics-port>`. If they're on
-  different networks, that's a firewall/VPN problem to solve first — nothing
-  in this stack can work around unreachable targets.
+- `PrometheusExporter` already running somewhere reachable from that node —
+  see `README-PROMETHEUS.md` at the repository root for how to start it
+  against a Monitor FE. Note its host and `--prometheus-port` (default
+  `9095`).
+- Network path from this node to `<exporter host>:<prometheus-port>`. If
+  they're on different networks, that's a firewall/VPN problem to solve
+  first — nothing in this stack can work around unreachable targets.
+- The exporter must be started with `--export-timestamps` for the "DPEs seen
+  in last 30s" panel to work (see below).
 
 ## Setup
 
@@ -36,12 +53,12 @@ grafana/dashboards/ersap-overview.json          the ERSAP Overview dashboard
 2. Edit `prometheus/prometheus.yml` and replace the placeholder target:
 
    ```yaml
-   - targets: ["monitoring-host.example.org:9200"]
+   - targets: ["monitoring-host.example.org:9095"]
      labels:
        session: "prod"
    ```
 
-   with the real `<j_pr host>:<metrics-port>`, and set (or remove) the
+   with the real `<exporter host>:<prometheus-port>`, and set (or remove) the
    `session` label to match whatever `--session` the DPEs were started with.
 
 3. From this directory, start the stack:
@@ -50,14 +67,14 @@ grafana/dashboards/ersap-overview.json          the ERSAP Overview dashboard
    docker compose up -d
    ```
 
-4. Confirm Prometheus is actually scraping `j_pr`:
+4. Confirm Prometheus is actually scraping the exporter:
 
    ```
    http://<remote-node>:9090/targets
    ```
 
-   The `ersap-prometheus-reporter` job should show state `UP`. If it's
-   `DOWN`, `curl http://<j_pr host>:<metrics-port>/metrics` directly from the
+   The `ersap-monitor` job should show state `UP`. If it's `DOWN`, `curl
+   http://<exporter host>:<prometheus-port>/metrics` directly from the
    remote node first — that isolates whether it's a Prometheus config
    problem or a network reachability problem.
 
@@ -85,11 +102,18 @@ grafana/dashboards/ersap-overview.json          the ERSAP Overview dashboard
 
 All panels are filterable by the `$session` and `$dpe` dashboard variables.
 
-**Not available yet:** p50/p95/p99 latency. `j_pr` only sees the periodic
-DPE-level report, which carries a cumulative execution-time sum — enough for
-an average, not a distribution. Getting percentiles would mean also
-subscribing to the per-event `done`/`ring` report channels, which is a
-separate, higher-volume data path not implemented here.
+**"DPEs seen in last 30s" needs `--export-timestamps`.** That panel queries
+`ersap_metric_last_update_timestamp_seconds{metric="ersap_dpe_cpu_usage_percent",...}`,
+which the exporter only emits when started with `--export-timestamps`. Without
+that flag the exporter keeps re-serving the last known value for a DPE
+indefinitely (there is no per-series expiry), so this is the only reliable way
+to tell a live DPE from one that stopped reporting.
+
+**Not available yet:** p50/p95/p99 latency. The exporter only sees the
+periodic DPE-level report, which carries a cumulative execution-time sum —
+enough for an average, not a distribution. Getting percentiles would mean
+also subscribing to the per-event `done`/`ring` report channels, which is a
+separate, higher-volume data path not implemented by the exporter.
 
 ## Stopping / cleaning up
 

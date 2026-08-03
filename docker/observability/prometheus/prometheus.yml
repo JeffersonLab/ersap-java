@@ -7,15 +7,15 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # PrometheusReporter (j_pr) aggregates and re-exposes metrics for every
-  # DPE reporting to the front-end it is subscribed to. One target here
-  # covers the whole DPE fleet behind that front-end.
-  - job_name: ersap-prometheus-reporter
+  # PrometheusExporter subscribes to the Monitor FE and re-exposes metrics for
+  # every DPE reporting to it. One target here covers the whole DPE fleet
+  # behind that Monitor FE.
+  - job_name: ersap-monitor
     metrics_path: /metrics
     scrape_interval: 15s
     static_configs:
-      # CHANGE ME: host:port where `j_pr` is running (--metrics-port, default 9200)
-      - targets: ["monitoring-host.example.org:9200"]
+      # CHANGE ME: host:port where PrometheusExporter is running (--prometheus-port, default 9095)
+      - targets: ["monitoring-host.example.org:9095"]
         labels:
           # CHANGE ME (or remove): match the --session the DPEs were started with
           session: "prod"

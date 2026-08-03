@@ -81,7 +81,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "count(time() - ersap_dpe_last_report_timestamp_seconds{session=~\"$session\", dpe=~\"$dpe\"} < 30)",
+          "expr": "count(time() - ersap_metric_last_update_timestamp_seconds{metric=\"ersap_dpe_cpu_usage_percent\", session=~\"$session\", dpe=~\"$dpe\"} < 30)",
           "legendFormat": "healthy DPEs"
         }
       ],
@@ -95,7 +95,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(ersap_service_execution_seconds_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum(rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
+          "expr": "sum(rate(ersap_service_execution_time_seconds_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum(rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
           "legendFormat": "avg exec time"
         }
       ],
@@ -155,7 +155,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum by (dpe, container, service) (rate(ersap_service_execution_seconds_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum by (dpe, container, service) (rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
+          "expr": "sum by (dpe, container, service) (rate(ersap_service_execution_time_seconds_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])) / clamp_min(sum by (dpe, container, service) (rate(ersap_service_requests_total{session=~\"$session\", dpe=~\"$dpe\"}[5m])), 1e-9)",
           "legendFormat": "{{dpe}}:{{container}}:{{service}}"
         }
       ],

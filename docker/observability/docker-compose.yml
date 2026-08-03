@@ -1,11 +1,11 @@
 version: "3.8"
 
-# ERSAP observability stack: Prometheus scrapes PrometheusReporter (j_pr),
-# Grafana visualizes it. Run this on whatever remote node should host
-# monitoring; it does not need to run on the same host as any DPE.
+# ERSAP observability stack: Prometheus scrapes PrometheusExporter, Grafana
+# visualizes it. Run this on whatever remote node should host monitoring; it
+# does not need to run on the same host as any DPE.
 #
 # Before starting, edit prometheus/prometheus.yml and set the real
-# host:port of the node running j_pr (default port 9200).
+# host:port of the node running PrometheusExporter (default port 9095).
 
 services:
   prometheus:
