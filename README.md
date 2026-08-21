@@ -83,4 +83,36 @@ See also the [Eclipse Buildship plugin](http://www.vogella.com/tutorials/Eclipse
 and the [Intellij IDEA Gradle Help](https://www.jetbrains.com/help/idea/2016.2/gradle.html).
 
 
+## Docker & observability
+
+Container- and metrics-related docs are split across a few files at the
+root and under `docker/` — this section is a map of what each one is for.
+
+| Doc | Purpose |
+|---|---|
+| [`docker/README.md`](docker/README.md) | How to build and run the ERSAP Docker image, and how to run the Prometheus + Grafana monitoring stack (`docker compose up`). Start here for anything Docker-related. |
+| [`README-PROMETHEUS.md`](README-PROMETHEUS.md) | Full three-node deployment guide: two ERSAP pipeline nodes reporting metrics to a Monitor Front End, exported to Prometheus, visualized in Grafana. |
+| [`ObservabilityTest.md`](ObservabilityTest.md) | A smaller two-node walkthrough of the same reporting path, using `TestMonitor` directly instead of Prometheus/Grafana — useful for verifying metrics flow without standing up the full stack. |
+| [`docker/observability/Grafana_Dashboard_Config.md`](docker/observability/Grafana_Dashboard_Config.md) | What the Prometheus/Grafana config files actually do, and how to edit the Grafana dashboard itself. |
+
+**Quick start — build and run the ERSAP image:**
+
+```console
+$ docker build -t ersap-java -f docker/Dockerfile .
+$ docker run --rm -it ersap-java j_dpe --host 0.0.0.0 --port 7771 --session mydemo
+```
+
+**Quick start — run the monitoring stack** (Prometheus + Grafana, assumes a
+`PrometheusExporter` is already running somewhere — see
+`README-PROMETHEUS.md`):
+
+```console
+$ cd docker/observability
+$ docker compose up -d
+$ open http://localhost:3000   # Grafana, admin / changeme
+```
+
+See [`docker/README.md`](docker/README.md) for the full explanation and
+more run options.
+
 For assistance send email to [sro@jlab.org](mailto:sro@jlab.org).
