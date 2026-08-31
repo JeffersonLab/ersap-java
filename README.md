@@ -86,6 +86,16 @@ tar xzf grafana-${GRAF_VER}.linux-amd64.tar.gz && mv grafana-v${GRAF_VER} $HOME/
 mkdir -p $HOME/grafana/{data,logs,plugins}
 ```
 
+**Deploy config files** (once, from the login node):
+
+```bash
+bash ~/ersap-java/perlmutter-setup/deploy.sh
+```
+
+This copies the Prometheus scrape config, Grafana `custom.ini`, datasource,
+dashboard provisioning, and the ERSAP Overview dashboard into the correct
+`$HOME` locations.
+
 **Submit the job** (edit the `USER CONFIGURATION` block at the top first):
 
 ```bash
