@@ -70,8 +70,25 @@ open http://localhost:3000    # admin / changeme
 
 ## Perlmutter (NERSC) — multi-node Slurm deployment
 
+**One-time setup on the login node** (`$HOME` is the same global filesystem on all nodes):
+
 ```bash
-# Edit the USER CONFIGURATION block at the top of the script, then:
+# Prometheus
+PROM_VER=2.53.0
+wget https://github.com/prometheus/prometheus/releases/download/v${PROM_VER}/prometheus-${PROM_VER}.linux-amd64.tar.gz
+tar xzf prometheus-${PROM_VER}.linux-amd64.tar.gz && mv prometheus-${PROM_VER}.linux-amd64 $HOME/prometheus
+mkdir -p $HOME/prometheus/data
+
+# Grafana
+GRAF_VER=11.1.0
+wget https://dl.grafana.com/oss/release/grafana-${GRAF_VER}.linux-amd64.tar.gz
+tar xzf grafana-${GRAF_VER}.linux-amd64.tar.gz && mv grafana-v${GRAF_VER} $HOME/grafana
+mkdir -p $HOME/grafana/{data,logs,plugins}
+```
+
+**Submit the job** (edit the `USER CONFIGURATION` block at the top first):
+
+```bash
 sbatch perlmutter-ersap.sbatch
 ```
 

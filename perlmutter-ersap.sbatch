@@ -93,7 +93,8 @@ sleep 5
 
 # =============================================================================
 # STEP 3 — MONITOR NODE: start Prometheus
-# Requires $HOME/prometheus to be pre-installed (see perlmutter-ersap-monitor.sh)
+# $HOME/prometheus must be installed on the login node before submitting.
+# It is visible here because $HOME is the same global filesystem on all nodes.
 # =============================================================================
 
 echo "[monitor] Starting Prometheus on :9090 ..."
@@ -110,7 +111,7 @@ sleep 5
 
 # =============================================================================
 # STEP 4 — MONITOR NODE: start Grafana
-# Requires $HOME/grafana to be pre-installed (see perlmutter-ersap-monitor.sh)
+# $HOME/grafana must be installed on the login node before submitting.
 # =============================================================================
 
 echo "[monitor] Starting Grafana on :3000 ..."
