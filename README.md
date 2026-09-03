@@ -106,6 +106,84 @@ The job log prints `SLURM_NODELIST` and the SSH tunnel command needed to open
 Grafana from your home computer. Use port 19000 instead of 9000 (9000 is busy
 on Perlmutter); `j_dpe --port` and `--monitor-port` must match.
 
+### Monitor-only allocation (one compute node)
+
+Use `perlmutter-ersap-monitor.slurm` when you want the monitor stack
+(`j_dpe` + `PrometheusExporter` + Prometheus + Grafana) to live in its own
+long-running SLURM job, independent of any processing-node allocation.
+Pipeline nodes launched elsewhere point at it via `ERSAP_MONITOR_FE`.
+
+**Submit** (from the repo root; `logs/` must exist before SLURM opens the
+job's stdout file):
+
+```bash
+mkdir -p logs
+sbatch perlmutter-ersap-monitor.slurm
+```
+
+Edit the `#SBATCH --account=` line first if your NERSC repo is not `amsc016`.
+All other settings (`ERSAP_HOME`, ports, session, timeouts) can be overridden
+by exporting them before `sbatch`.
+
+**Discover the allocated monitor node** — hostname discovery is a compute-node
+operation, not a submit-host one:
+
+```bash
+squeue -j <job-id> -o "%.18i %.9P %.30j %.8u %.2t %.10M %.6D %R"
+scontrol show job <job-id>
+scontrol show hostnames "$(squeue -h -j <job-id> -o '%N')"
+cat  logs/monitor-<job-id>/monitor-info.txt
+source logs/monitor-<job-id>/monitor.env   # exposes MONITOR_HOST / ERSAP_MONITOR_FE / ports
+```
+
+`monitor-info.txt` records the SLURM job id, short hostname, FQDN, expanded
+node list, endpoints, PIDs, launch commands, and log paths. `monitor.env` is
+the machine-readable subset that pipeline nodes can `source`.
+
+**Verify readiness.** The job only prints the *"ERSAP monitor successfully
+started"* banner after every service is listening, `curl http://.../metrics`,
+`/-/ready`, and `/api/health` all respond, `ersap_prometheus_exporter_up == 1`
+(i.e. the exporter is attached to `j_dpe`), and no child has exited. A
+failure at any step aborts the job with a non-zero exit code.
+
+**Follow the logs** (on the login node — `$HOME` is shared with the compute
+node):
+
+```bash
+tail -f logs/monitor-<job-id>.out
+tail -f logs/monitor-<job-id>/j_dpe.log
+tail -f logs/monitor-<job-id>/exporter.log
+tail -f logs/monitor-<job-id>/prometheus.log
+tail -f logs/monitor-<job-id>/grafana.log
+```
+
+**Inspect the running node** directly:
+
+```bash
+NODE=$(squeue -h -j <job-id> -o '%N')
+ssh "$NODE" 'ss -tlnp | grep -E ":(19000|9095|9090|3000)"'
+ssh "$NODE" 'ps -o pid,cmd -p $(pgrep -d, -u $USER -f "j_dpe|PrometheusExporter|prometheus|grafana-server")'
+```
+
+**Connect from your laptop** (the info file also prints this line):
+
+```bash
+ssh -N \
+  -L 3000:<monitor-node>:3000 \
+  -L 9090:<monitor-node>:9090 \
+  <user>@perlmutter.nersc.gov
+# Grafana:    http://localhost:3000  (admin / changeme)
+# Prometheus: http://localhost:9090
+```
+
+**Shut down** — clean cancellation triggers the batch script's `SIGTERM`
+trap, which sends `SIGTERM` to every captured child PID, waits up to 20 s,
+then `SIGKILL`s stragglers, and writes `STATE=stopped` to the status file:
+
+```bash
+scancel <job-id>
+```
+
 ---
 
 ## Docker
