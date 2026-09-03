@@ -96,15 +96,17 @@ This copies the Prometheus scrape config, Grafana `custom.ini`, datasource,
 dashboard provisioning, and the ERSAP Overview dashboard into the correct
 `$HOME` locations.
 
-**Submit the job** (edit the `USER CONFIGURATION` block at the top first):
+**Submit a job.** Three single-node scripts are provided (see
+`HOWTO-perlmutter.md` for a quick cheat sheet):
 
-```bash
-sbatch perlmutter-ersap.sbatch
-```
+| Script | Purpose |
+|---|---|
+| `perlmutter-ersap-monitor.slurm`   | monitor stack only |
+| `perlmutter-ersap-processor.slurm` | one pipeline container reporting to a remote monitor |
+| `perlmutter-ersap-allinone.slurm`  | monitor **and** one pipeline on the same node |
 
-The job log prints `SLURM_NODELIST` and the SSH tunnel command needed to open
-Grafana from your home computer. Use port 19000 instead of 9000 (9000 is busy
-on Perlmutter); `j_dpe --port` and `--monitor-port` must match.
+Use port 19000 instead of 9000 (9000 is busy on Perlmutter); `j_dpe --port`
+and `--monitor-port` must match.
 
 ### Monitor-only allocation (one compute node)
 
