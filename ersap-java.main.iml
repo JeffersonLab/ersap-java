@@ -5,6 +5,7 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/src/main">
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
@@ -19,11 +20,18 @@
     <orderEntry type="library" name="Gradle: org.jlab.coda:jinflux:1.0-SNAPSHOT" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains:annotations:24.0.1" level="project" />
     <orderEntry type="library" name="Gradle: org.zeromq:jeromq:0.5.4" level="project" />
+    <orderEntry type="library" name="Gradle: io.prometheus:simpleclient_httpserver:0.16.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.prometheus:simpleclient_hotspot:0.16.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.prometheus:simpleclient:0.16.0" level="project" />
     <orderEntry type="library" name="Gradle: org.influxdb:influxdb-java:2.2" level="project" />
     <orderEntry type="library" name="Gradle: eu.neilalexander:jnacl:1.0.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.prometheus:simpleclient_common:0.16.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.prometheus:simpleclient_tracer_otel:0.16.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.prometheus:simpleclient_tracer_otel_agent:0.16.0" level="project" />
     <orderEntry type="library" name="Gradle: com.google.guava:guava:18.0" level="project" />
     <orderEntry type="library" name="Gradle: com.squareup.retrofit:retrofit:1.9.0" level="project" />
     <orderEntry type="library" name="Gradle: com.squareup.okhttp:okhttp:2.4.0" level="project" />
+    <orderEntry type="library" name="Gradle: io.prometheus:simpleclient_tracer_common:0.16.0" level="project" />
     <orderEntry type="library" name="Gradle: com.google.code.gson:gson:2.3.1" level="project" />
     <orderEntry type="library" name="Gradle: com.squareup.okio:okio:1.4.0" level="project" />
   </component>

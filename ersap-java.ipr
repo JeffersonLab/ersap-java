@@ -213,6 +213,62 @@
       <JAVADOC />
       <SOURCES />
     </library>
+    <library name="Gradle: io.prometheus:simpleclient:0.16.0" type="java-imported" external-system-id="GRADLE">
+      <properties groupId="io.prometheus" artifactId="simpleclient" version="0.16.0" />
+      <CLASSES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.prometheus/simpleclient/0.16.0/28b0eaf7c500c506976da8d0fc9cad6c278e8d87/simpleclient-0.16.0.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="Gradle: io.prometheus:simpleclient_common:0.16.0" type="java-imported" external-system-id="GRADLE">
+      <properties groupId="io.prometheus" artifactId="simpleclient_common" version="0.16.0" />
+      <CLASSES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.prometheus/simpleclient_common/0.16.0/a09a8c790a20309b942a9fdbfe77da22407096e6/simpleclient_common-0.16.0.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="Gradle: io.prometheus:simpleclient_hotspot:0.16.0" type="java-imported" external-system-id="GRADLE">
+      <properties groupId="io.prometheus" artifactId="simpleclient_hotspot" version="0.16.0" />
+      <CLASSES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.prometheus/simpleclient_hotspot/0.16.0/3b34eb5be2e55348a77c2fa641c55c0874237175/simpleclient_hotspot-0.16.0.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="Gradle: io.prometheus:simpleclient_httpserver:0.16.0" type="java-imported" external-system-id="GRADLE">
+      <properties groupId="io.prometheus" artifactId="simpleclient_httpserver" version="0.16.0" />
+      <CLASSES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.prometheus/simpleclient_httpserver/0.16.0/2c23f53ca22d7d8885fc4522ddcadcfe7f01a783/simpleclient_httpserver-0.16.0.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="Gradle: io.prometheus:simpleclient_tracer_common:0.16.0" type="java-imported" external-system-id="GRADLE">
+      <properties groupId="io.prometheus" artifactId="simpleclient_tracer_common" version="0.16.0" />
+      <CLASSES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.prometheus/simpleclient_tracer_common/0.16.0/dec00ef7c6155c4ca1109ec8248f7ff58d8f6cd3/simpleclient_tracer_common-0.16.0.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="Gradle: io.prometheus:simpleclient_tracer_otel:0.16.0" type="java-imported" external-system-id="GRADLE">
+      <properties groupId="io.prometheus" artifactId="simpleclient_tracer_otel" version="0.16.0" />
+      <CLASSES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.prometheus/simpleclient_tracer_otel/0.16.0/cc3d2b7b7cb6f077e3b1ee1d3e99eb54fddfa151/simpleclient_tracer_otel-0.16.0.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
+    <library name="Gradle: io.prometheus:simpleclient_tracer_otel_agent:0.16.0" type="java-imported" external-system-id="GRADLE">
+      <properties groupId="io.prometheus" artifactId="simpleclient_tracer_otel_agent" version="0.16.0" />
+      <CLASSES>
+        <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/io.prometheus/simpleclient_tracer_otel_agent/0.16.0/9d724771e339ff7ec6cd7c0cc170d3470904c5/simpleclient_tracer_otel_agent-0.16.0.jar!/" />
+      </CLASSES>
+      <JAVADOC />
+      <SOURCES />
+    </library>
     <library name="Gradle: net.bytebuddy:byte-buddy:1.10.16" type="java-imported" external-system-id="GRADLE">
       <properties groupId="net.bytebuddy" artifactId="byte-buddy" version="1.10.16" />
       <CLASSES>
