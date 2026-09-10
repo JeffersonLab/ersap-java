@@ -114,11 +114,16 @@ stop_children() {
 }
 
 wait_children() {
-    local timeout="${1:-15}" end=$(( SECONDS + timeout )) name alive
+    local timeout="${1:-15}"
+    local end=$(( SECONDS + timeout ))
+    local name alive
+
     while (( SECONDS < end )); do
         alive=0
         for name in "${!PIDS[@]}"; do
-            if kill -0 "${PIDS[$name]}" 2>/dev/null; then alive=1; fi
+            if kill -0 "${PIDS[$name]}" 2>/dev/null; then
+                alive=1
+            fi
         done
         (( alive == 0 )) && return 0
         sleep 1
@@ -207,7 +212,9 @@ if (( missing )); then
     log "aborting: install/deploy the missing components (see perlmutter-setup/deploy.sh)"
     exit 1
 fi
-mkdir -p "$PROM_HOME/data"
+#mkdir -p "$PROM_HOME/data"
+PROM_DATA_DIR="$(mktemp -d "/dev/shm/ersap-prometheus-${SLURM_JOB_ID}.XXXXXX")"
+log "Prometheus data directory: $PROM_DATA_DIR"
 
 cd "$REPO_DIR"
 
@@ -236,7 +243,8 @@ EXPORTER_CMD=(
 PROM_CMD=(
     "$PROM_HOME/prometheus"
     --config.file="$PROM_HOME/ersap.yml"
-    --storage.tsdb.path="$PROM_HOME/data"
+    #    --storage.tsdb.path="$PROM_HOME/data"
+    --storage.tsdb.path="$PROM_DATA_DIR"
     --storage.tsdb.retention.time=7d
     --web.listen-address="0.0.0.0:$PROM_PORT"
 )
