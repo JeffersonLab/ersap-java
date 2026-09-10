@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="943f1171-e9b1-4191-98e3-7f55665c4636" name="Changes" comment="Fix REPO_DIR. Slurm runs a submitted copy of the script, so ${BASH_SOURCE[0]} can point into its spool directory rather than our repository. Since we submit from the repository root we need to use SLURM_SUBMIT_DIR instead.">
+    <list default="true" id="943f1171-e9b1-4191-98e3-7f55665c4636" name="Changes" comment="Fix unbound variable bug.">
       <change beforePath="$PROJECT_DIR$/HOWTO-perlmutter.md" beforeDir="false" afterPath="$PROJECT_DIR$/HOWTO-perlmutter.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ersap-java.iws" beforeDir="false" afterPath="$PROJECT_DIR$/ersap-java.iws" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/perlmutter-ersap-monitor.slurm" beforeDir="false" afterPath="$PROJECT_DIR$/perlmutter-ersap-monitor.slurm" afterDir="false" />
@@ -200,7 +200,7 @@
       <workItem from="1769957952605" duration="25000" />
       <workItem from="1769958034619" duration="98000" />
       <workItem from="1789000550075" duration="2199000" />
-      <workItem from="1789002945001" duration="297000" />
+      <workItem from="1789002945001" duration="1260000" />
     </task>
     <task id="LOCAL-00001" summary="Switch to no-streaming mode">
       <option name="closed" value="true" />
@@ -234,7 +234,15 @@
       <option name="project" value="LOCAL" />
       <updated>1789001701200</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Fix unbound variable bug.">
+      <option name="closed" value="true" />
+      <created>1789003324165</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1789003324165</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -244,7 +252,8 @@
     <MESSAGE value="Switch to no-streaming mode" />
     <MESSAGE value="delete the build directory in the repo" />
     <MESSAGE value="Fix REPO_DIR. Slurm runs a submitted copy of the script, so ${BASH_SOURCE[0]} can point into its spool directory rather than our repository. Since we submit from the repository root we need to use SLURM_SUBMIT_DIR instead." />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix REPO_DIR. Slurm runs a submitted copy of the script, so ${BASH_SOURCE[0]} can point into its spool directory rather than our repository. Since we submit from the repository root we need to use SLURM_SUBMIT_DIR instead." />
+    <MESSAGE value="Fix unbound variable bug." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix unbound variable bug." />
     <option name="MAKE_NEW_CHANGELIST_ACTIVE" value="true" />
   </component>
   <component name="VgoProject">

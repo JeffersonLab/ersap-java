@@ -288,7 +288,8 @@ wait_for "grafana" "${PIDS[grafana]}" "$STARTUP_TIMEOUT" \
 # Confirm exporter has actually attached to j_dpe (metric value must be 1).
 EXPORTER_UP="$(curl -sf --max-time 5 "http://127.0.0.1:${EXPORTER_PORT}/metrics" 2>/dev/null \
     | awk '/^ersap_prometheus_exporter_up([ {]|$)/{print $NF; exit}' || true)"
-if [[ "$EXPORTER_UP" != "1" ]]; then
+#if [[ "$EXPORTER_UP" != "1" ]]; then
+if ! awk -v value="$EXPORTER_UP" 'BEGIN { exit !(value != "" && value + 0 == 1) }'; then
     log "ERROR: exporter not connected to monitor FE (ersap_prometheus_exporter_up=${EXPORTER_UP:-<absent>})"
     shutdown 1
 fi

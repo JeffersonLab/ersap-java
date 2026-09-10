@@ -97,5 +97,7 @@ Job exits when the pipeline finishes; monitor is torn down automatically.
 squeue -u $USER
 scontrol show job <JOB_ID>
 scontrol show hostnames "$(squeue -h -j <JOB_ID> -o '%N')"
+squeue --start -j <JOB_ID>
+sprio -j <JOB_ID>
 scancel <JOB_ID>
 ```
