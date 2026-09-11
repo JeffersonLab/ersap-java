@@ -26,7 +26,7 @@ Edit each `.slurm` file's `#SBATCH --account=` line if your NERSC repo is not `a
 
 ```bash
 cd ~/ersap-java && mkdir -p logs
-sbatch perlmutter-ersap-monitor.slurm      # note the JOB_ID
+sbatch perlmutter-ersap-monitor-longrun.slurm      # note the JOB_ID
 OR
 sbatch --qos=debug --time=00:30:00 perlmutter-ersap-monitor.slurm
 ```
