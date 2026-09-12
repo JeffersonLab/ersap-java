@@ -9,30 +9,11 @@ Four single-node scripts. Pick one (or two, for monitor + processor). See `READM
 | `perlmutter-ersap-processor.slurm`        | one pipeline container, reports to a **remote** monitor |
 | `perlmutter-ersap-allinone.slurm`         | monitor **and** one pipeline on the same node |
 
-None of these require building `ersap-java` — see §0 below.
-
 ---
 
-## 0. Getting the scripts (no build required)
+## 0. One-time setup (login node)
 
-The scripts don't need a build of `ersap-java`, and they don't read anything else out of this repo at run time. All they need on the Perlmutter side is:
-
-```
-perlmutter-ersap-monitor.slurm
-perlmutter-ersap-monitor-longrun.slurm
-perlmutter-ersap-processor.slurm      # only if you'll run a pipeline against a remote monitor
-perlmutter-ersap-allinone.slurm       # only if you'll run monitor + pipeline together
-perlmutter-setup/
-```
-
-So it's enough to `git clone` (or `git pull` to update) just this repo onto the login node — no `gradle`/`./gradlew build` step. The actual ERSAP runtime the scripts launch comes from two separate places:
-
-- `ERSAP_HOME` — a pre-built ERSAP install on the login/compute node (used by `monitor*.slurm` and `allinone.slurm` to run `j_dpe` and the `PrometheusExporter`)
-- the `podman-hpc` container image (`IMAGE`, default `docker.io/gurjyan/pet-sro:v1`) — used by `processor.slurm` and `allinone.slurm`, and bundles its own ERSAP runtime internally
-
-Neither of those is part of this git checkout.
-
-## 1. One-time setup (login node)
+No build of `ersap-java` needed: `git clone`/`pull` this repo for the scripts above plus `perlmutter-setup/` — nothing else here is read at run time. `ERSAP_HOME` (a pre-built ERSAP install, used by `monitor*.slurm`/`allinone.slurm`) and the `podman-hpc` pipeline image (used by `processor.slurm`/`allinone.slurm`, default `docker.io/gurjyan/pet-sro:v1`) are separate dependencies, not part of this repo.
 
 ```bash
 # Install Prometheus and Grafana binaries under $HOME (see README §Perlmutter)
@@ -44,9 +25,7 @@ Edit each `.slurm` file's `#SBATCH --account=` line if your NERSC repo is not `a
 
 ---
 
-## 2. Monitor only
-
-All three scripts resolve paths (logs, discovery files) from the directory you run `sbatch` from (`SLURM_SUBMIT_DIR`) — always `cd` into your `ersap-java` checkout (or wherever you want `logs/` to live) first, exactly as shown below.
+## 1. Monitor only
 
 Two ways to run the monitor stack, depending on what you need:
 
@@ -79,7 +58,7 @@ Cancel: `scancel <JOB_ID>`
 
 ---
 
-## 3. Processor only (monitor already running)
+## 2. Processor only (monitor already running)
 
 ```bash
 cd ~/ersap-java && mkdir -p logs
@@ -94,7 +73,7 @@ Cancel: `scancel <JOB_ID>`   (stops the container cleanly)
 
 ---
 
-## 4. Monitor + pipeline on one node
+## 3. Monitor + pipeline on one node
 
 ```bash
 cd ~/ersap-java && mkdir -p logs
