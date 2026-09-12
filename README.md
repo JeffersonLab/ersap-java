@@ -96,31 +96,39 @@ This copies the Prometheus scrape config, Grafana `custom.ini`, datasource,
 dashboard provisioning, and the ERSAP Overview dashboard into the correct
 `$HOME` locations.
 
-**Submit a job.** Three single-node scripts are provided (see
-`HOWTO-perlmutter.md` for a quick cheat sheet):
+**Submit a job.** Four single-node scripts are provided (see
+`HOWTO-perlmutter.md` for a quick cheat sheet). None of them require building
+`ersap-java` on Perlmutter — they only need `ERSAP_HOME` (built via `./gradlew
+deploy`, see Build above) and, for the pipeline scripts, the `podman-hpc`
+container image:
 
 | Script | Purpose |
 |---|---|
-| `perlmutter-ersap-monitor.slurm`   | monitor stack only |
-| `perlmutter-ersap-processor.slurm` | one pipeline container reporting to a remote monitor |
-| `perlmutter-ersap-allinone.slurm`  | monitor **and** one pipeline on the same node |
+| `perlmutter-ersap-monitor.slurm`          | monitor stack only, on an exclusive `regular`-QOS compute node |
+| `perlmutter-ersap-monitor-longrun.slurm`  | monitor stack only, on a `workflow`-QOS/`cron`-constraint node meant for long-running services (currently sized for 30 days; requires NERSC to approve `workflow` QOS for your account) |
+| `perlmutter-ersap-processor.slurm`        | one pipeline container reporting to a remote monitor |
+| `perlmutter-ersap-allinone.slurm`         | monitor **and** one pipeline on the same node |
 
 Use port 19000 instead of 9000 (9000 is busy on Perlmutter); `j_dpe --port`
 and `--monitor-port` must match.
 
 ### Monitor-only allocation (one compute node)
 
-Use `perlmutter-ersap-monitor.slurm` when you want the monitor stack
+Use `perlmutter-ersap-monitor.slurm` (or `perlmutter-ersap-monitor-longrun.slurm`
+for a persistent, `workflow`-QOS deployment) when you want the monitor stack
 (`j_dpe` + `PrometheusExporter` + Prometheus + Grafana) to live in its own
-long-running SLURM job, independent of any processing-node allocation.
-Pipeline nodes launched elsewhere point at it via `ERSAP_MONITOR_FE`.
+SLURM job, independent of any processing-node allocation. Pipeline nodes
+launched elsewhere point at it via `ERSAP_MONITOR_FE`. Everything below
+applies to either script.
 
-**Submit** (from the repo root; `logs/` must exist before SLURM opens the
+**Submit** (from the repo root — both scripts resolve paths from the
+directory `sbatch` is run in, and `logs/` must exist before SLURM opens the
 job's stdout file):
 
 ```bash
 mkdir -p logs
 sbatch perlmutter-ersap-monitor.slurm
+# or: sbatch perlmutter-ersap-monitor-longrun.slurm
 ```
 
 Edit the `#SBATCH --account=` line first if your NERSC repo is not `amsc016`.
