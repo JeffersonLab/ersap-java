@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk-slim AS build
+FROM eclipse-temurin:17-jdk-jammy AS build
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install --assume-yes apt-utils
@@ -36,7 +36,7 @@ EXPOSE 7771-7775
 EXPOSE 9095
 
 
-FROM openjdk:8-jre-slim
+FROM eclipse-temurin:17-jre-jammy
 
 # Useful packages
 RUN apt-get update && apt-get install -y \

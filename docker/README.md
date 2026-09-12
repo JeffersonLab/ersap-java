@@ -18,11 +18,11 @@ running somewhere — and you don't need the ERSAP image built to run it.
 
 Builds a runnable ERSAP container using a **multi-stage build**:
 
-- **Stage 1 (`build`)** — `openjdk:8-jdk-slim`, copies the source in, runs
+- **Stage 1 (`build`)** — `eclipse-temurin:17-jdk-jammy`, copies the source in, runs
   `./gradlew build check` then `./gradlew deploy`: the same build/deploy path
   the root [`README.md`](../README.md#build) assumes (`ERSAP_HOME`,
   `./gradlew deploy`).
-- **Stage 2 (final image)** — `openjdk:8-jre-slim`, just the JRE, no build
+- **Stage 2 (final image)** — `eclipse-temurin:17-jre-jammy`, just the JRE, no build
   toolchain. Only the built `${ERSAP_HOME}` tree is copied out of stage 1, so
   the JDK/Gradle/source used to build it never end up in the shipped image.
 

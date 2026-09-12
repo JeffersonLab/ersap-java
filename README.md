@@ -8,7 +8,7 @@ services file and driven by an orchestrator over ZeroMQ.
 
 ## Build
 
-Requires Java 14+.
+Requires Java 17+.
 
 ```bash
 git clone https://github.com/JeffersonLab/ersap-java.git
