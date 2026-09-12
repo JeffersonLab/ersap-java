@@ -203,10 +203,16 @@ scancel <job-id>
 docker build -t ersap-java -f docker/Dockerfile .
 
 # Run a DPE
-docker run --rm -it --network=host \
-  -v "$PWD/data:/usr/local/ersap/data" \
+docker run --rm -it \
+  -p 7771-7775:7771-7775 \
+  -v "$PWD/data/input:/usr/local/ersap/data/input" \
+  -v "$PWD/data/output:/usr/local/ersap/data/output" \
+  -v "$PWD/log:/usr/local/ersap/log" \
   ersap-java j_dpe --host 0.0.0.0 --port 7771 --session myrun
 ```
+
+See [`docker/README.md`](docker/README.md) for the full build/run walkthrough
+(dev-stage builds, running a shell instead, the exporter port, etc.).
 
 ---
 

@@ -20,16 +20,15 @@ Builds a runnable ERSAP container using a **multi-stage build**:
 
 - **Stage 1 (`build`)** — `openjdk:8-jdk-slim`, copies the source in, runs
   `./gradlew build check` then `./gradlew deploy`: the same build/deploy path
-  the root [`README-PROMETHEUS.md`](../README-PROMETHEUS.md) deployment
-  guide assumes (`ERSAP_HOME`, `./gradlew deploy`).
+  the root [`README.md`](../README.md#build) assumes (`ERSAP_HOME`,
+  `./gradlew deploy`).
 - **Stage 2 (final image)** — `openjdk:8-jre-slim`, just the JRE, no build
   toolchain. Only the built `${ERSAP_HOME}` tree is copied out of stage 1, so
   the JDK/Gradle/source used to build it never end up in the shipped image.
 
 It exposes:
 
-- `7771-7775` — the DPE ports each pipeline node binds (matches the "Ports"
-  table in `README-PROMETHEUS.md`).
+- `7771-7775` — the DPE ports each pipeline node binds.
 - `9095` — the PrometheusExporter's `/metrics` port, only relevant if this
   image is used to run the exporter.
 
@@ -136,6 +135,5 @@ See:
 - [`observability/Grafana_Dashboard_Config.md`](observability/Grafana_Dashboard_Config.md)
   — what the Prometheus/Grafana YAML files and the dashboard JSON actually
   do, and how to edit the dashboard.
-- [`../README-PROMETHEUS.md`](../README-PROMETHEUS.md) — full three-node
-  deployment walkthrough, including starting the Monitor FE and the
-  exporter that feeds this stack.
+- [`../README.md`](../README.md#observability) — starting the Monitor FE and
+  the exporter that feeds this stack.

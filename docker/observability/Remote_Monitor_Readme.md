@@ -9,12 +9,11 @@ with any DPE.
 Application DPEs → xMsg dpeReport/userMetrics → Monitor FE → PrometheusExporter (:9095/metrics) → Prometheus → Grafana
 ```
 
-The exporter itself, its full option reference, and a complete three-node
-deployment walkthrough (pipeline nodes + Monitor FE + exporter) live outside
-this directory:
+The exporter itself, its full option reference, and how to start it against
+a Monitor FE live outside this directory:
 
-* [`../../README-PROMETHEUS.md`](../../README-PROMETHEUS.md) — step-by-step
-  deployment guide, including how to start the Monitor FE and the exporter.
+* [`../../README.md`](../../README.md#observability) — how to start the
+  Monitor FE and the exporter.
 * [`../../src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md`](../../src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md) —
   exporter reference: every option, the metric catalogue, filters, reconnection
   behaviour.
@@ -36,9 +35,9 @@ grafana/dashboards/ersap-overview.json          the ERSAP Overview dashboard
 
 - Docker and Docker Compose on the remote node.
 - `PrometheusExporter` already running somewhere reachable from that node —
-  see `README-PROMETHEUS.md` at the repository root for how to start it
-  against a Monitor FE. Note its host and `--prometheus-port` (default
-  `9095`).
+  see `README.md` at the repository root (Observability section) for how to
+  start it against a Monitor FE. Note its host and `--prometheus-port`
+  (default `9095`).
 - Network path from this node to `<exporter host>:<prometheus-port>`. If
   they're on different networks, that's a firewall/VPN problem to solve
   first — nothing in this stack can work around unreachable targets.

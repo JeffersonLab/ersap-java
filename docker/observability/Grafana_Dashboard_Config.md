@@ -119,9 +119,8 @@ known values just sit there forever with no way to tell it's stale.
 
 * [`Remote_Monitor_Readme.md`](Remote_Monitor_Readme.md) — setup/operating
   guide for this Prometheus + Grafana stack (Docker Compose based).
-* [`../../README-PROMETHEUS.md`](../../README-PROMETHEUS.md) — full
-  three-node deployment walkthrough, including starting the Monitor FE and
-  the exporter.
+* [`../../README.md`](../../README.md#observability) — starting the Monitor
+  FE and the exporter.
 * [`../../src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md`](../../src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md) —
   exporter reference: every option, the metric catalogue, filters,
   reconnection behaviour.
