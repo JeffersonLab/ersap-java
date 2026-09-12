@@ -59,7 +59,7 @@ set -euo pipefail
 # LOG LAYOUT
 # -----------------------------------------------------------------------------
 JOB_ID="${SLURM_JOB_ID:-manual-$$}"
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="${SLURM_SUBMIT_DIR:?Submit with sbatch from the repository root}"
 LOG_DIR="$REPO_DIR/logs/processor-${JOB_ID}"
 mkdir -p "$LOG_DIR"
 
