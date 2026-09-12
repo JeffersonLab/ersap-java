@@ -47,7 +47,7 @@ import java.util.Set;
  * </ul>
  *
  * @see org.jlab.epsci.ersap.examples.engines.test.EventRateMonitor
- * @see ObservabilityTest.md for the full step-by-step setup guide
+ * @see <a href="https://github.com/JeffersonLab/ersap-java/blob/main/README.md#observability">README.md</a> for the full step-by-step setup guide
  */
 public class TestMonitor {
 

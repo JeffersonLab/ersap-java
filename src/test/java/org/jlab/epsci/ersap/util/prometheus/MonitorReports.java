@@ -24,9 +24,9 @@ import java.util.Map;
  *
  * <p>{@code dpe-report.json} is a complete {@code dpeReport} document — the same
  * {@code DPERegistration}/{@code DPERuntime} pair that
- * {@code ErsapSubscriptions.DpeReportSubscription} decodes — describing the
- * three-service pipeline of {@code ObservabilityTest.md}. The user metrics
- * payload is the one {@code EventRateMonitor} publishes.
+ * {@code ErsapSubscriptions.DpeReportSubscription} decodes — describing a
+ * representative three-service pipeline. The user metrics payload is the one
+ * {@code EventRateMonitor} publishes.
  */
 final class MonitorReports {
 

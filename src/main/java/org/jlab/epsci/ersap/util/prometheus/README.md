@@ -4,7 +4,7 @@ Subscribes to an ERSAP **Monitor FE**, converts every numeric value it broadcast
 Prometheus metric, and serves them on `http://0.0.0.0:9095/metrics`.
 
 It is the machine-readable counterpart of
-[`TestMonitor`](../../../../../../examples/TestMonitor.java): the same two subscriptions,
+[`TestMonitor`](../../examples/TestMonitor.java): the same two subscriptions,
 the same messages, printed into a Prometheus registry instead of stdout.
 
 ```
@@ -134,7 +134,7 @@ Notes taken from the data classes:
 * DPEs configured to duplicate their reports to it, via
   `export ERSAP_MONITOR_FE="<monfe-ip>%9000_java"`.
 
-`ObservabilityTest.md` at the repository root walks through the whole setup.
+[`README.md`](../../../../../../../../../README.md#observability) at the repository root walks through the whole setup.
 
 ## Dependencies
 
