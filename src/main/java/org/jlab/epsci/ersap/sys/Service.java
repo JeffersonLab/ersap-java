@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -40,6 +41,7 @@ class Service extends AbstractActor {
 
     private final ExecutorService executionPool;
     private final ServiceEngine[] enginePool;
+    private final Semaphore available;
     private final ServiceSysConfig sysConfig;
     private final ServiceReport sysReport;
 
@@ -71,8 +73,9 @@ class Service extends AbstractActor {
 
         sysReport = new ServiceReport(comp, userEngine, session);
 
-        // Creating thread pool
-        executionPool = xMsgUtil.newThreadPool(comp.getSubscriptionPoolSize(), name);
+        // Creating thread pool ("-exec" suffix distinguishes these threads from the
+        // xMsg callback pool, which shares the service name, in jstack output)
+        executionPool = xMsgUtil.newThreadPool(comp.getSubscriptionPoolSize(), name + "-exec");
 
         // Creating service object pool
         enginePool = new ServiceEngine[comp.getSubscriptionPoolSize()];
@@ -82,6 +85,10 @@ class Service extends AbstractActor {
         for (int i = 0; i < comp.getSubscriptionPoolSize(); i++) {
             enginePool[i] = new ServiceEngine(userEngine, engineActor, sysConfig, sysReport);
         }
+
+        // One permit per engine: acquire() parks the caller until an engine is free,
+        // eliminating the busy-wait that was present in execute() and configure().
+        available = new Semaphore(enginePool.length);
 
         // Register with the shared memory
         SharedMemory.addReceiver(name);
@@ -133,42 +140,56 @@ class Service extends AbstractActor {
 
 
     private void configure(final xMsgMessage msg) throws Exception {
-        while (true) {
-            for (final ServiceEngine engine : enginePool) {
-                if (engine.tryAcquire()) {
-                    executionPool.submit(() -> {
-                        try {
-                            engine.configure(msg);
-                        } catch (Exception e) {
-                            printUnhandledException(e);
-                        } finally {
-                            engine.release();
-                        }
-                    });
-                    return;
-                }
+        try {
+            available.acquire();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        for (final ServiceEngine engine : enginePool) {
+            if (engine.tryAcquire()) {
+                executionPool.submit(() -> {
+                    try {
+                        engine.configure(msg);
+                    } catch (Exception e) {
+                        printUnhandledException(e);
+                    } finally {
+                        engine.release();
+                        available.release();
+                    }
+                });
+                return;
             }
         }
+        available.release();
+        throw new IllegalStateException("permit held but no free engine in " + name);
     }
 
 
     private void execute(final xMsgMessage msg) {
-        while (true) {
-            for (final ServiceEngine engine : enginePool) {
-                if (engine.tryAcquire()) {
-                    executionPool.submit(() -> {
-                        try {
-                            engine.execute(msg);
-                        } catch (Exception e) {
-                            printUnhandledException(e);
-                        } finally {
-                            engine.release();
-                        }
-                    });
-                    return;
-                }
+        try {
+            available.acquire();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        for (final ServiceEngine engine : enginePool) {
+            if (engine.tryAcquire()) {
+                executionPool.submit(() -> {
+                    try {
+                        engine.execute(msg);
+                    } catch (Exception e) {
+                        printUnhandledException(e);
+                    } finally {
+                        engine.release();
+                        available.release();
+                    }
+                });
+                return;
             }
         }
+        available.release();
+        throw new IllegalStateException("permit held but no free engine in " + name);
     }
 
 
