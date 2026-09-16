@@ -40,6 +40,41 @@ run local
 
 ---
 
+## Environment variables in YAML config
+
+Both the application/services YAML (loaded by the orchestrator) and the
+per-engine service specification YAML support environment-variable
+substitution. Any `${VAR}` occurrence in the file is replaced with the value
+of `VAR` from the process environment before the YAML is parsed. Use
+`${VAR:-default}` to provide a fallback when the variable is unset (an unset
+variable with no default expands to the empty string).
+
+Example:
+
+```yaml
+io-services:
+  reader:
+    class: ${READER_CLASS:-org.jlab.clas12.ana.ReaderService}
+    name: ReaderService
+  writer:
+    class: org.jlab.clas12.ana.WriterService
+    name: WriterService
+services:
+  - class: org.jlab.clas12.rec.ServiceB
+    name: ServiceB
+mime-types:
+  - binary/data-hipo
+configuration:
+  output_dir: ${ERSAP_USER_DATA}/out
+  threads:    ${NUM_THREADS:-4}
+```
+
+Substitution is textual and happens before YAML parsing, so quote values that
+may contain YAML-special characters (colons, `#`, leading `-`), e.g.
+`path: "${SOME_PATH}"`.
+
+---
+
 ## Observability
 
 **1. Start the Monitor Front-End** (dedicated node or separate terminal):

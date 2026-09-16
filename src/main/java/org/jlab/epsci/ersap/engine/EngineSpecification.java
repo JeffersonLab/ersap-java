@@ -9,10 +9,12 @@ package org.jlab.epsci.ersap.engine;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import org.jlab.epsci.ersap.util.EnvUtils;
 import org.jlab.epsci.ersap.util.FileUtils;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
@@ -108,12 +110,16 @@ public class EngineSpecification {
         if (input != null) {
             Yaml yaml = new Yaml();
             try {
-                Object content = yaml.load(input);
+                String raw = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+                String expanded = EnvUtils.expandEnvironment(raw, System.getenv());
+                Object content = yaml.load(expanded);
                 if (content instanceof Map) {
                     parseContent((Map<String, Object>) content);
                 } else {
                     throw new ParseException("Unexpected YAML content");
                 }
+            } catch (IOException e) {
+                throw new ParseException(e);
             } catch (YAMLException e) {
                 throw new ParseException(e);
             } finally {

@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -98,9 +99,11 @@ public class OrchestratorConfigParser {
      */
     public OrchestratorConfigParser(String configFilePath) {
         try (InputStream input = new FileInputStream(configFilePath)) {
+            String raw = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            String expanded = EnvUtils.expandEnvironment(raw, System.getenv());
             Yaml yaml = new Yaml();
             @SuppressWarnings("unchecked")
-            Map<String, Object> config = (Map<String, Object>) yaml.load(input);
+            Map<String, Object> config = (Map<String, Object>) yaml.load(expanded);
             this.config = new JSONObject(config);
         } catch (FileNotFoundException e) {
             throw error("could not open configuration file", e);
