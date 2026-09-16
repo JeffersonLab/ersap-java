@@ -85,6 +85,48 @@ Job exits when the pipeline finishes; monitor is torn down automatically.
 
 ---
 
+## 4. Add an external `/metrics` endpoint to the monitor's Prometheus
+
+Any component that exposes a Prometheus-format `/metrics` endpoint (custom
+exporter, third-party service, another pipeline) can be scraped by the
+Prometheus running inside the monitor job — no code changes to ERSAP required.
+
+Edit `perlmutter-setup/prometheus/ersap.yml` and append a job under
+`scrape_configs`:
+
+```yaml
+  - job_name: sagips-exporter
+    metrics_path: /metrics        # omit if default
+    scrape_interval: 15s          # omit to inherit global
+    static_configs:
+      - targets: ["<host>:<port>"]   # e.g. "nid001234:9200" or "localhost:9200"
+        labels:
+          pipeline: "mypipe"         # any labels you want on every series
+          user:     "$USER"
+```
+
+Only `job_name` and `targets` are required. Add `basic_auth`, `scheme: https`,
+or `tls_config` only if the endpoint needs them.
+
+Redeploy and reload — no monitor restart needed:
+
+```bash
+bash ~/ersap-java/perlmutter-setup/deploy.sh          # copies edited ersap.yml into $HOME/prometheus/
+curl -X POST http://<monitor-node>:9090/-/reload      # hot-reload Prometheus
+```
+
+Verify at `http://<monitor-node>:9090/targets` — the new job should be **UP**.
+Metrics are then queryable in Grafana against the existing Prometheus
+datasource (build a new dashboard/panel; the ERSAP overview dashboard only
+shows `ersap_*` series).
+
+**Ephemeral hosts**: if the exporter runs on a Slurm-allocated node whose
+hostname changes per job, hard-coding it in `ersap.yml` won't scale — switch
+that job to `file_sd_configs` instead (target JSON written to `$HOME` on
+job start, deleted on exit).
+
+---
+
 ## Common overrides (export before `sbatch`)
 
 | Var | Default | Applies to |
