@@ -99,41 +99,171 @@ A `docker-compose.yml` that runs **Prometheus + Grafana** (not ERSAP itself)
 to visualize metrics coming from a `PrometheusExporter` process running
 somewhere reachable.
 
-### Running the stack
-
-Nothing to build — it's two off-the-shelf images
-(`prom/prometheus:v2.53.0`, `grafana/grafana:11.1.0`) wired together by
-compose. From this directory:
-
-```bash
-cd docker/observability
-
-# point prometheus/prometheus.yml at your real PrometheusExporter host:port first
-docker compose up -d
-
-# check the exporter target is UP
-open http://localhost:9090/targets
-
-# Grafana — admin / changeme (change it on first login)
-open http://localhost:3000
+```
+DPEs → Monitor FE (:9000) → PrometheusExporter (:9095/metrics) → Prometheus (:9090) → Grafana (:3000)
 ```
 
-The Prometheus data source and the **ERSAP Overview** dashboard are
-auto-provisioned on startup — nothing to import by hand. See
-`Remote_Monitor_Readme.md` linked below for the full setup/edit/prerequisite
-walkthrough.
+### Files
+
+| Path | What it does |
+|---|---|
+| `docker-compose.yml` | runs `prom/prometheus:v2.53.0` and `grafana/grafana:11.1.0` with named volumes |
+| `prometheus/prometheus.yml` | scrape config — tells Prometheus which hosts to poll |
+| `grafana/provisioning/datasources/datasource.yml` | auto-registers the Prometheus data source |
+| `grafana/provisioning/dashboards/dashboards.yml` | tells Grafana to load dashboards from disk, re-checked every 30 s |
+| `grafana/dashboards/ersap-overview.json` | the ERSAP Overview dashboard (12 panels) |
+
+### Setup and startup
+
+1. Edit `prometheus/prometheus.yml` and replace the placeholder target with
+   the real host and port of the `PrometheusExporter` (default port `9095`):
+
+   ```yaml
+   static_configs:
+     - targets: ["<exporter-host>:9095"]
+       labels:
+         session: "prod"    # match --session the DPEs were started with, or remove
+   ```
+
+2. Start the stack (nothing to build — both images are pulled from Docker Hub):
+
+   ```bash
+   cd docker/observability
+   docker compose up -d
+   ```
+
+3. Verify Prometheus is scraping the exporter:
+
+   ```
+   http://localhost:9090/targets   # ersap-monitor job should show UP
+   ```
+
+   If it shows DOWN, run `curl http://<exporter-host>:9095/metrics` directly
+   from the Docker host to isolate a config problem from a network problem.
+
+4. Open Grafana — the data source and the **ERSAP Overview** dashboard are
+   auto-provisioned on startup, nothing to import:
+
+   ```
+   http://localhost:3000   # admin / changeme — change the password on first login
+   ```
+
+### Stopping and data retention
 
 ```bash
-docker compose down       # stop, keep the Prometheus/Grafana data volumes
-docker compose down -v    # stop and delete them
+docker compose down       # stop, keep Prometheus TSDB and Grafana state volumes
+docker compose down -v    # stop and delete volumes
 ```
 
-See:
+Prometheus retains data for 30 days (`--storage.tsdb.retention.time=30d` in
+`docker-compose.yml`). Adjust before running long-term.
+
+### Adding an external `/metrics` endpoint
+
+Any component that exposes a Prometheus-format `/metrics` endpoint can be
+scraped alongside the ERSAP exporter — no code changes required.
+
+Edit `prometheus/prometheus.yml` and append a job under `scrape_configs`.
+The file ships with one job:
+
+```yaml
+scrape_configs:
+  - job_name: ersap-monitor
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["monitoring-host.example.org:9095"]
+        labels:
+          session: "prod"
+```
+
+**Minimal entry** — only `job_name` and `targets` are required:
+
+```yaml
+  - job_name: my-exporter
+    static_configs:
+      - targets: ["<host>:<port>"]   # e.g. "10.0.0.5:8000" or "localhost:9200"
+```
+
+**Full annotated entry**:
+
+```yaml
+  - job_name: my-exporter
+
+    metrics_path: /metrics          # default; omit if unchanged
+    scrape_interval: 15s            # omit to inherit the global 15s
+    scrape_timeout: 10s
+
+    static_configs:
+      - targets:
+          - "<host>:<port>"
+        labels:
+          pipeline: "mypipe"        # any labels added to every series from this target
+
+    # Only needed for Basic Auth endpoints:
+    # basic_auth:
+    #   username: "user"
+    #   password: "secret"
+
+    # Only needed for HTTPS endpoints:
+    # scheme: https
+    # tls_config:
+    #   insecure_skip_verify: true
+```
+
+`job_name` must be unique across all entries.
+
+**Reload without restarting the stack:**
+
+```bash
+curl -X POST http://localhost:9090/-/reload
+```
+
+If the reload is rejected, check `docker compose logs prometheus` for a parse
+error. Alternatively, `docker compose restart prometheus` also picks up the
+change.
+
+Verify the new target is **UP** at `http://localhost:9090/targets`.
+
+### Adding a Grafana panel for external metrics
+
+Once Prometheus is scraping a new job, its metrics are immediately queryable.
+To visualize them, add a panel to
+`grafana/dashboards/ersap-overview.json` — or create a new dashboard JSON file
+in `grafana/dashboards/` (Grafana loads every `.json` in that directory).
+
+Grafana re-reads the dashboards folder every 30 s automatically. A minimal new
+panel block in the JSON:
+
+```json
+{
+  "id": 13,
+  "title": "My external metric",
+  "type": "timeseries",
+  "gridPos": {"x": 0, "y": 36, "w": 24, "h": 8},
+  "targets": [
+    {
+      "expr": "my_metric_name{label=~\"value\"}",
+      "legendFormat": "{{instance}}"
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {"unit": "short"}
+  }
+}
+```
+
+See [`observability/Grafana_Dashboard_Config.md`](observability/Grafana_Dashboard_Config.md)
+for the full panel catalog, PromQL patterns, grid layout reference, and how to
+add template variables.
+
+### Further reading
 
 - [`observability/Remote_Monitor_Readme.md`](observability/Remote_Monitor_Readme.md)
-  — setup/operating guide for this stack.
+  — full setup/operating guide: prerequisites, step-by-step startup, what's on
+  the dashboard, stopping and cleanup.
 - [`observability/Grafana_Dashboard_Config.md`](observability/Grafana_Dashboard_Config.md)
-  — what the Prometheus/Grafana YAML files and the dashboard JSON actually
-  do, and how to edit the dashboard.
+  — panel catalog with every PromQL query, how to add and edit panels, PromQL
+  patterns, Grafana unit IDs.
 - [`../README.md`](../README.md#observability) — starting the Monitor FE and
   the exporter that feeds this stack.
