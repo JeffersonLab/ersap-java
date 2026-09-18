@@ -171,129 +171,88 @@ for the Perlmutter (`ersap.yml`) variant.
 
 ## Perlmutter (NERSC) — multi-node Slurm deployment
 
-**One-time setup on the login node** (`$HOME` is the same global filesystem on all nodes):
+### Scripts
+
+All Slurm scripts live under `slurm/`. The two monitor scripts share a common
+bash library (`slurm/lib/monitor-stack.sh`) that handles startup, supervision,
+shutdown, and discovery file generation — each wrapper is ~50 lines of SBATCH
+directives and configuration.
+
+```
+slurm/
+├── monitor.slurm           regular QOS, exclusive cpu node, up to 8 h
+├── monitor-longrun.slurm   workflow QOS, cron constraint, up to 30 days
+├── processor.slurm         pipeline container, points at a remote monitor
+├── allinone.slurm          monitor stack + pipeline on one node
+└── lib/
+    └── monitor-stack.sh    shared monitor logic (sourced, not run directly)
+```
+
+| Script | QOS | Use when |
+|---|---|---|
+| `slurm/monitor.slurm` | `regular` | ad hoc testing, short runs |
+| `slurm/monitor-longrun.slurm` | `workflow` | production, persistent metrics (requires NERSC approval) |
+| `slurm/processor.slurm` | `regular` | pipeline node pointing at a running monitor |
+| `slurm/allinone.slurm` | `regular` | monitor + pipeline on one node |
+
+**Port note**: port 9000 is busy on Perlmutter. All scripts use `19000` for
+the Monitor FE — `j_dpe --port` and `--monitor-port` must always match.
+
+### One-time setup (login node)
 
 ```bash
-# Prometheus
+# Install Prometheus and Grafana under $HOME (shared with all compute nodes)
 PROM_VER=2.53.0
 wget https://github.com/prometheus/prometheus/releases/download/v${PROM_VER}/prometheus-${PROM_VER}.linux-amd64.tar.gz
 tar xzf prometheus-${PROM_VER}.linux-amd64.tar.gz && mv prometheus-${PROM_VER}.linux-amd64 $HOME/prometheus
 mkdir -p $HOME/prometheus/data
 
-# Grafana
 GRAF_VER=11.1.0
 wget https://dl.grafana.com/oss/release/grafana-${GRAF_VER}.linux-amd64.tar.gz
 tar xzf grafana-${GRAF_VER}.linux-amd64.tar.gz && mv grafana-v${GRAF_VER} $HOME/grafana
 mkdir -p $HOME/grafana/{data,logs,plugins}
-```
 
-**Deploy config files** (once, from the login node):
-
-```bash
+# Deploy Prometheus scrape config, Grafana config, and ERSAP Overview dashboard
 bash ~/ersap-java/perlmutter-setup/deploy.sh
+
+# Edit account line in each script if your NERSC repo is not amsc016
 ```
 
-This copies the Prometheus scrape config, Grafana `custom.ini`, datasource,
-dashboard provisioning, and the ERSAP Overview dashboard into the correct
-`$HOME` locations.
-
-**Submit a job.** Four single-node scripts are provided (see
-`HOWTO-perlmutter.md` for a quick cheat sheet). None of them require building
-`ersap-java` on Perlmutter — they only need `ERSAP_HOME` (built via `./gradlew
-deploy`, see Build above) and, for the pipeline scripts, the `podman-hpc`
-container image:
-
-| Script | Purpose |
-|---|---|
-| `slurm/monitor.slurm`          | monitor stack only, on an exclusive `regular`-QOS compute node |
-| `slurm/monitor-longrun.slurm`  | monitor stack only, on a `workflow`-QOS/`cron`-constraint node meant for long-running services (currently sized for 30 days; requires NERSC to approve `workflow` QOS for your account) |
-| `slurm/processor.slurm`        | one pipeline container reporting to a remote monitor |
-| `slurm/allinone.slurm`         | monitor **and** one pipeline on the same node |
-
-Use port 19000 instead of 9000 (9000 is busy on Perlmutter); `j_dpe --port`
-and `--monitor-port` must match.
-
-### Monitor-only allocation (one compute node)
-
-Use `slurm/monitor.slurm` (or `slurm/monitor-longrun.slurm`
-for a persistent, `workflow`-QOS deployment) when you want the monitor stack
-(`j_dpe` + `PrometheusExporter` + Prometheus + Grafana) to live in its own
-SLURM job, independent of any processing-node allocation. Pipeline nodes
-launched elsewhere point at it via `ERSAP_MONITOR_FE`. Everything below
-applies to either script.
-
-**Submit** (from the repo root — both scripts resolve paths from the
-directory `sbatch` is run in, and `logs/` must exist before SLURM opens the
-job's stdout file):
+### Submit and operate
 
 ```bash
-mkdir -p logs
-sbatch slurm/monitor.slurm
-# or: sbatch slurm/monitor-longrun.slurm
+cd ~/ersap-java && mkdir -p logs
+
+# Monitor only (pick one):
+sbatch slurm/monitor-longrun.slurm          # production
+sbatch --qos=debug --time=00:30:00 slurm/monitor.slurm  # debug
+
+# Processor (monitor already running):
+export MONITOR_ENV_FILE=$PWD/logs/monitor-<JOB_ID>/monitor.env
+sbatch slurm/processor.slurm
+
+# Both on one node:
+sbatch slurm/allinone.slurm
 ```
 
-Edit the `#SBATCH --account=` line first if your NERSC repo is not `amsc016`.
-All other settings (`ERSAP_HOME`, ports, session, timeouts) can be overridden
-by exporting them before `sbatch`.
-
-**Discover the allocated monitor node** — hostname discovery is a compute-node
-operation, not a submit-host one:
+After submission — discover the node and connect:
 
 ```bash
-squeue -j <job-id> -o "%.18i %.9P %.30j %.8u %.2t %.10M %.6D %R"
-scontrol show job <job-id>
-scontrol show hostnames "$(squeue -h -j <job-id> -o '%N')"
-cat  logs/monitor-<job-id>/monitor-info.txt
-source logs/monitor-<job-id>/monitor.env   # exposes MONITOR_HOST / ERSAP_MONITOR_FE / ports
+cat logs/monitor-<JOB_ID>/monitor-info.txt   # endpoints, PIDs, tunnel command
+source logs/monitor-<JOB_ID>/monitor.env     # sets ERSAP_MONITOR_FE, ports
+
+ssh -N -L 3000:<monitor-node>:3000 -L 9090:<monitor-node>:9090 \
+    <user>@perlmutter.nersc.gov
+# Grafana: http://localhost:3000  (admin / changeme)
 ```
 
-`monitor-info.txt` records the SLURM job id, short hostname, FQDN, expanded
-node list, endpoints, PIDs, launch commands, and log paths. `monitor.env` is
-the machine-readable subset that pipeline nodes can `source`.
+The job prints `ERSAP monitor successfully started` only after all four
+services (`j_dpe`, `PrometheusExporter`, Prometheus, Grafana) pass their
+readiness checks. A failure at any step aborts the job.
 
-**Verify readiness.** The job only prints the *"ERSAP monitor successfully
-started"* banner after every service is listening, `curl http://.../metrics`,
-`/-/ready`, and `/api/health` all respond, `ersap_prometheus_exporter_up == 1`
-(i.e. the exporter is attached to `j_dpe`), and no child has exited. A
-failure at any step aborts the job with a non-zero exit code.
-
-**Follow the logs** (on the login node — `$HOME` is shared with the compute
-node):
-
-```bash
-tail -f logs/monitor-<job-id>.out
-tail -f logs/monitor-<job-id>/j_dpe.log
-tail -f logs/monitor-<job-id>/exporter.log
-tail -f logs/monitor-<job-id>/prometheus.log
-tail -f logs/monitor-<job-id>/grafana.log
-```
-
-**Inspect the running node** directly:
-
-```bash
-NODE=$(squeue -h -j <job-id> -o '%N')
-ssh "$NODE" 'ss -tlnp | grep -E ":(19000|9095|9090|3000)"'
-ssh "$NODE" 'ps -o pid,cmd -p $(pgrep -d, -u $USER -f "j_dpe|PrometheusExporter|prometheus|grafana-server")'
-```
-
-**Connect from your laptop** (the info file also prints this line):
-
-```bash
-ssh -N \
-  -L 3000:<monitor-node>:3000 \
-  -L 9090:<monitor-node>:9090 \
-  <user>@perlmutter.nersc.gov
-# Grafana:    http://localhost:3000  (admin / changeme)
-# Prometheus: http://localhost:9090
-```
-
-**Shut down** — clean cancellation triggers the batch script's `SIGTERM`
-trap, which sends `SIGTERM` to every captured child PID, waits up to 20 s,
-then `SIGKILL`s stragglers, and writes `STATE=stopped` to the status file:
-
-```bash
-scancel <job-id>
-```
+All other settings (`ERSAP_HOME`, `SESSION`, `IMAGE`, ports) can be overridden
+by exporting them before `sbatch` — see `HOWTO-perlmutter.md` for the full
+overrides table, troubleshooting guide, and `monitor-stack.sh` phase reference.
 
 ---
 
@@ -325,7 +284,7 @@ observability stack.
 |---|---|
 | [`docker/README.md`](docker/README.md) | Building the ERSAP image, running containers, the complete Docker Compose monitoring stack, Grafana panel configuration |
 | [`src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md`](src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md) | PrometheusExporter reference: every option, the full metric catalogue, labels, filters, reconnection, alert rules |
-| [`HOWTO-perlmutter.md`](HOWTO-perlmutter.md) | Perlmutter quick-start: four Slurm scripts, one-time setup, adding external scrape targets, `file_sd_configs` for ephemeral nodes |
+| [`HOWTO-perlmutter.md`](HOWTO-perlmutter.md) | Perlmutter operations: `slurm/` structure, `monitor-stack.sh` phase reference, overrides table, troubleshooting, external scrape targets, `file_sd_configs` for ephemeral nodes |
 
 ---
 
