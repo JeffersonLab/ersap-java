@@ -17,6 +17,79 @@ for the Monitor FE. `j_dpe --port` and `--monitor-port` must always match.
 
 ---
 
+## Script structure
+
+```
+slurm/
+├── monitor.slurm           regular QOS, exclusive cpu node, up to 8 h
+├── monitor-longrun.slurm   workflow QOS, cron constraint, up to 30 days
+├── processor.slurm         pipeline container, points at a remote monitor
+├── allinone.slurm          monitor stack + pipeline on one node
+└── lib/
+    └── monitor-stack.sh    shared bash body sourced by both monitor scripts
+```
+
+### `slurm/lib/monitor-stack.sh`
+
+`monitor-stack.sh` is **not a script you run directly** — it is a bash library
+sourced by `monitor.slurm` and `monitor-longrun.slurm`. It contains all the
+logic that both monitor variants share, organised into nine phases:
+
+| Phase | What it does |
+|---|---|
+| **Log layout** | Creates `logs/monitor-<JOB_ID>/` and defines paths for per-service log files, the info file, env file, and state file |
+| **Host discovery** | Resolves the compute node's routable IP (`hostname -I`), builds `ERSAP_MONITOR_FE=<ip>%<port>_java`, expands `SLURM_JOB_NODELIST` |
+| **Shutdown handler** | Installs `SIGTERM`/`SIGINT`/`SIGHUP` traps; on signal: sends SIGTERM to all child PIDs, waits up to `SHUTDOWN_TIMEOUT` seconds, then SIGKILLs stragglers, writes `STATE=stopped` to the state file |
+| **Readiness helpers** | `port_listening <port>` — checks a TCP port is open; `http_ok <url>` — checks an HTTP endpoint returns 200; `wait_for <name> <pid> <timeout> <check>` — polls until the check passes or the process exits or times out |
+| **Pre-flight** | Verifies all required executables, directories, and config files exist before starting anything; aborts cleanly if any are missing. Sets `PROM_DATA_DIR` to `/dev/shm/...` (tmpfs, for `PROM_STORAGE=tmpfs`) or `$PROM_HOME/data` (persistent disk, for `PROM_STORAGE=persistent`) |
+| **Commands** | Assembles the four command arrays (`DPE_CMD`, `EXPORTER_CMD`, `PROM_CMD`, `GRAFANA_CMD`) from the caller's configuration variables. Adds `--storage.tsdb.retention.size=1GB` to Prometheus only when `PROM_STORAGE=persistent` |
+| **Startup** | Starts the four services in dependency order (`j_dpe` → `PrometheusExporter` → `prometheus` → `grafana-server`), waiting for each to pass its readiness check before starting the next. Verifies `ersap_prometheus_exporter_up == 1` before declaring success |
+| **Discovery files** | Writes `monitor-info.txt` (human-readable: all endpoints, PIDs, commands, log paths, SSH tunnel command) and `monitor.env` (machine-readable: key=value pairs that processor nodes can `source`). Prints the readiness banner to stdout |
+| **Supervision loop** | Polls all four PIDs every 5 s; if any exits unexpectedly, dumps its last 20 log lines and calls `shutdown 1` |
+
+### How the monitor scripts use the library
+
+Each monitor script is ~50 lines: SBATCH directives, a configuration block
+that sets all the required variables, and a single `source` call:
+
+```bash
+# from slurm/monitor.slurm
+: "${ERSAP_HOME:=/global/homes/g/gurjyan/...}"
+: "${MONITOR_PORT:=19000}"
+: "${SESSION:=test}"
+: "${PROM_STORAGE:=tmpfs}"     # short job: use RAM-backed storage
+: "${MONITOR_TYPE:=regular}"   # written into monitor-info.txt
+# ... other vars ...
+
+# shellcheck source=lib/monitor-stack.sh
+source "${SLURM_SUBMIT_DIR}/slurm/lib/monitor-stack.sh"
+```
+
+```bash
+# from slurm/monitor-longrun.slurm — identical except:
+: "${PROM_STORAGE:=persistent}"  # 30-day job: keep metrics on disk
+: "${MONITOR_TYPE:=longrun}"
+```
+
+The only functional difference between the two scripts is `PROM_STORAGE` and
+the SBATCH resource request. Everything else — startup, supervision, shutdown,
+discovery files — is identical and lives once in the library.
+
+### Adding a new monitor variant
+
+To create a new monitor variant (different QOS, time limit, or storage
+behaviour), copy either monitor script, change the `#SBATCH` directives and
+any configuration defaults, and keep the `source` line. The library handles
+the rest.
+
+```bash
+cp slurm/monitor.slurm slurm/monitor-myvariant.slurm
+# edit #SBATCH lines and : "${...}" defaults as needed
+# the source line stays identical
+```
+
+---
+
 ## 0. One-time setup (login node)
 
 `$HOME` is a global GPFS filesystem, the same on the login node and all compute
