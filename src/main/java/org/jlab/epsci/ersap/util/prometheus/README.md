@@ -454,19 +454,145 @@ then stops the HTTP server and its executor. `close()` is idempotent.
 
 ## Prometheus
 
-`prometheus/prometheus-example.yml` is ready to use:
+`prometheus/prometheus-example.yml` is ready to use as a starting point.
+Copy the `scrape_configs` entry into your `prometheus.yml`, or run Prometheus
+directly against it:
 
-```yaml
-scrape_configs:
-  - job_name: "ersap-monitor"
-    static_configs:
-      - targets:
-          - "localhost:9095"
+```bash
+prometheus --config.file=prometheus-example.yml
 ```
 
-Scraping faster than the DPE report period (10 s by default) only re-reads the same
-samples. It also contains suggested alert rules for `up == 0`, a silent Monitor FE and
-failing services.
+### Scraping the exporter
+
+The minimal entry — only `job_name` and `targets` are required:
+
+```yaml
+  - job_name: "ersap-monitor"
+    static_configs:
+      - targets: ["localhost:9095"]
+```
+
+Replace `localhost:9095` with the real host and `--prometheus-port` of the
+exporter. Scraping faster than the DPE report period (10 s by default) only
+re-reads the same samples; 15 s is a sensible floor.
+
+Full annotated entry:
+
+```yaml
+  - job_name: "ersap-monitor"
+    metrics_path: /metrics        # default; omit if unchanged
+
+    scrape_interval: 15s          # per-job override; omit to inherit global
+    scrape_timeout: 10s
+
+    static_configs:
+      - targets: ["<exporter-host>:9095"]
+        labels:
+          # Optional: tag the whole target. Prefer this over --label when the
+          # value describes where the exporter runs rather than what it exports.
+          deployment: "lab"
+```
+
+### Running multiple exporters
+
+One exporter per Monitor FE; Prometheus aggregates them:
+
+```yaml
+  - job_name: "ersap-monitor"
+    static_configs:
+      - targets: ["monfe-a.example.org:9095"]
+        labels: {ring: "a"}
+      - targets: ["monfe-b.example.org:9095"]
+        labels: {ring: "b"}
+```
+
+### Adding an external `/metrics` endpoint
+
+Any component that exposes a Prometheus-format `/metrics` endpoint alongside
+ERSAP (custom exporter, third-party service, another pipeline) can be added as
+a separate job — no code changes to ERSAP required:
+
+```yaml
+  - job_name: my-exporter
+    static_configs:
+      - targets: ["<host>:<port>"]   # e.g. "10.0.0.5:8000" or "localhost:9200"
+        labels:
+          pipeline: "mypipe"         # any labels you want on every series
+```
+
+Full annotated form:
+
+```yaml
+  - job_name: my-exporter
+
+    metrics_path: /metrics          # default: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+    static_configs:
+      - targets:
+          - "<host>:<port>"
+        labels:
+          pipeline: "mypipe"
+
+    # Only needed if the endpoint requires HTTP Basic Auth.
+    # basic_auth:
+    #   username: "user"
+    #   password: "secret"
+
+    # Only needed for HTTPS endpoints.
+    # scheme: https
+    # tls_config:
+    #   insecure_skip_verify: true
+```
+
+`job_name` must be unique across all entries in the file. The new job's metrics
+appear in Grafana immediately against the existing Prometheus datasource; build
+a new dashboard or panel for them (the ERSAP overview dashboard only shows
+`ersap_*` series).
+
+### Reloading without restarting Prometheus
+
+```bash
+curl -X POST http://<prometheus-host>:9090/-/reload
+```
+
+Verify the new target is **UP** at `http://<prometheus-host>:9090/targets`.
+
+### Alert rules
+
+`prometheus/prometheus-example.yml` also contains suggested alert rules
+(commented out). Add them via a `rule_files` entry:
+
+```yaml
+rule_files:
+  - "ersap-alerts.yml"
+```
+
+Suggested rules:
+
+```yaml
+groups:
+  - name: ersap-exporter
+    rules:
+      - alert: ErsapExporterDown
+        expr: ersap_prometheus_exporter_up == 0
+        for: 2m
+        annotations:
+          summary: "The ERSAP exporter is not subscribed to the Monitor FE"
+
+      - alert: ErsapMonitorFeSilent
+        expr: time() - ersap_prometheus_exporter_last_message_timestamp_seconds > 120
+        for: 5m
+        annotations:
+          summary: "No Monitor FE message for more than two minutes"
+
+      - alert: ErsapServiceFailures
+        expr: rate(ersap_service_failures_total[5m]) > 0
+        for: 5m
+        annotations:
+          summary: "{{ $labels.service }} is failing requests"
+```
 
 ## Grafana
 
