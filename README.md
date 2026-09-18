@@ -13,7 +13,15 @@ Requires Java 17+.
 ```bash
 git clone https://github.com/JeffersonLab/ersap-java.git
 cd ersap-java
-./gradlew deploy          # installs into $ERSAP_HOME
+./gradlew deploy          # compile, test, checkstyle, SpotBugs, install into $ERSAP_HOME
+```
+
+`ERSAP_HOME` must be set before running `deploy`. To run only the tests without
+installing:
+
+```bash
+./gradlew test            # unit and integration tests
+./gradlew check           # tests + checkstyle + SpotBugs
 ```
 
 ---
@@ -23,7 +31,7 @@ cd ersap-java
 ```bash
 export ERSAP_HOME=/path/to/ersap
 export ERSAP_USER_DATA=/path/to/user/data
-export ERSAP_MONITOR_FE="<monitor-ip>%9000_java"   # enables metric forwarding
+export ERSAP_MONITOR_FE="<monitor-ip>%9000_java"   # enables metric forwarding to the Monitor FE
 
 ersap-shell
 ```
@@ -37,6 +45,17 @@ set inputDir     $ERSAP_USER_DATA/data/input
 set outputDir    $ERSAP_USER_DATA/data/output
 run local
 ```
+
+| Command | What it does |
+|---|---|
+| `set session` | names this run; DPE reports and user metrics are tagged with it |
+| `set servicesFile` | path to the YAML file that declares I/O services, the processing chain, and per-service configuration |
+| `set inputDir` / `set outputDir` | directories the reader and writer services use |
+| `run local` | deploys all services on this node and starts processing |
+
+`ERSAP_MONITOR_FE` must be set to `<monitor-ip>%<port>_java` (e.g.
+`10.0.0.1%9000_java`) for the DPE to forward its reports. Without it the
+pipeline runs normally but no metrics are published.
 
 ---
 
@@ -77,7 +96,22 @@ may contain YAML-special characters (colons, `#`, leading `-`), e.g.
 
 ## Observability
 
+The observability stack has three components:
+
+```
+ERSAP DPEs ──dpeReport──▶  Monitor FE  ──▶  PrometheusExporter  ──▶  /metrics:9095
+           ──userMetrics──▶  (:9000)                                       │
+                                                                            ▼
+                                                                       Prometheus
+                                                                            │
+                                                                            ▼
+                                                                          Grafana
+```
+
 **1. Start the Monitor Front-End** (dedicated node or separate terminal):
+
+The Monitor FE is a plain `j_dpe` process that acts as a collection proxy —
+all other DPEs with `ERSAP_MONITOR_FE` set forward their reports to it.
 
 ```bash
 j_dpe --host <monitor-ip> --port 9000 --session myrun
@@ -85,11 +119,23 @@ j_dpe --host <monitor-ip> --port 9000 --session myrun
 
 **2. Start the Prometheus exporter** (same node as Monitor FE):
 
+`PrometheusExporter` subscribes to the Monitor FE over xMsg/ZeroMQ, converts
+every DPE report and engine user-metric into Prometheus gauges and counters,
+and serves them on `http://0.0.0.0:9095/metrics`.
+
 ```bash
 java -cp "$ERSAP_HOME/lib/*" \
      org.jlab.epsci.ersap.util.prometheus.PrometheusExporter \
      --monitor-host <monitor-ip> --monitor-port 9000 \
      --session '*' --prometheus-port 9095
+```
+
+If `$ERSAP_MONITOR_FE` is already exported, no arguments are needed — the
+exporter reads the host and port from the environment:
+
+```bash
+export ERSAP_MONITOR_FE="<monitor-ip>%9000_java"
+java -cp "$ERSAP_HOME/lib/*" org.jlab.epsci.ersap.util.prometheus.PrometheusExporter
 ```
 
 **3. Start Prometheus + Grafana** via Docker Compose:
@@ -100,6 +146,16 @@ cd docker/observability
 docker compose up -d
 open http://localhost:3000    # admin / changeme
 ```
+
+The **ERSAP Overview** dashboard is auto-provisioned on startup. It shows 12
+panels: total processed events, failure rate, DPEs alive, average execution
+time, processing rate by service, success/failure, error rate, execution time
+per service, CPU usage, memory usage, network bytes, and shared-memory
+reads/writes. All panels are filterable by session and DPE via dropdowns.
+
+Engine-published user metrics (`EngineMetricsPublisher.publish(key, value)`)
+appear automatically as `ersap_user_<key>` series — no dashboard change needed
+to chart them once they arrive.
 
 ### Adding an external `/metrics` endpoint
 
@@ -313,7 +369,7 @@ scancel <job-id>
 ## Docker
 
 ```bash
-# Build
+# Build (context must be the repo root)
 docker build -t ersap-java -f docker/Dockerfile .
 
 # Run a DPE
@@ -325,8 +381,22 @@ docker run --rm -it \
   ersap-java j_dpe --host 0.0.0.0 --port 7771 --session myrun
 ```
 
-See [`docker/README.md`](docker/README.md) for the full build/run walkthrough
-(dev-stage builds, running a shell instead, the exporter port, etc.).
+See [`docker/README.md`](docker/README.md) for the full build/run walkthrough:
+multi-stage build details, dev-stage image, running a shell instead of a
+command, running the PrometheusExporter from the image, and the Docker Compose
+observability stack.
+
+---
+
+## Further reading
+
+| Document | What it covers |
+|---|---|
+| [`docker/README.md`](docker/README.md) | Building the ERSAP image, running containers, the Docker Compose observability stack |
+| [`docker/observability/Remote_Monitor_Readme.md`](docker/observability/Remote_Monitor_Readme.md) | Full setup guide for the Prometheus + Grafana Docker Compose stack: prerequisites, startup, adding external scrape targets, stopping |
+| [`docker/observability/Grafana_Dashboard_Config.md`](docker/observability/Grafana_Dashboard_Config.md) | Panel catalog with every PromQL query, how to add and edit panels, template variables, PromQL patterns, unit IDs |
+| [`src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md`](src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md) | PrometheusExporter reference: every option, the full metric catalogue, labels, filters, reconnection, alert rules |
+| [`HOWTO-perlmutter.md`](HOWTO-perlmutter.md) | Perlmutter quick-start: four Slurm scripts, one-time setup, adding external scrape targets, `file_sd_configs` for ephemeral nodes |
 
 ---
 
