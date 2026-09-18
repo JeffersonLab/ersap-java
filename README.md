@@ -159,82 +159,13 @@ to chart them once they arrive.
 
 ### Adding an external `/metrics` endpoint
 
-Any component that exposes a Prometheus-format `/metrics` endpoint (custom
-exporter, third-party service, another pipeline) can be scraped by the same
-Prometheus instance — no code changes to ERSAP required.
-
-The Prometheus configuration file is `docker/observability/prometheus/prometheus.yml`
-(Docker Compose setup) or `perlmutter-setup/prometheus/ersap.yml` (Perlmutter).
-Both ship with one job that covers the ERSAP PrometheusExporter:
-
-```yaml
-scrape_configs:
-  - job_name: ersap-monitor
-    metrics_path: /metrics
-    scrape_interval: 15s
-    static_configs:
-      - targets: ["localhost:9095"]
-```
-
-Append an additional entry under `scrape_configs` for every external endpoint.
-
-**Minimal entry** — only `job_name` and `targets` are required:
-
-```yaml
-  - job_name: my-exporter
-    static_configs:
-      - targets: ["<host>:<port>"]   # e.g. "nid001234:8000" or "localhost:9200"
-```
-
-`metrics_path` defaults to `/metrics` and `scrape_interval` inherits the global
-value, so nothing else is needed for a plain HTTP endpoint on any port.
-
-**Full annotated entry**:
-
-```yaml
-  - job_name: my-exporter
-
-    # Path Prometheus calls on each target (default: /metrics).
-    metrics_path: /metrics
-
-    # Per-job overrides; omit to inherit the global values.
-    scrape_interval: 15s
-    scrape_timeout: 10s
-
-    # Static target list. Multiple groups can carry different labels.
-    static_configs:
-      - targets:
-          - "<host>:<port>"
-        labels:
-          pipeline: "mypipe"      # any key/value pairs added to every series
-
-    # Only needed if the endpoint requires HTTP Basic Auth.
-    # basic_auth:
-    #   username: "user"
-    #   password: "secret"
-
-    # Only needed for HTTPS endpoints.
-    # scheme: https
-    # tls_config:
-    #   insecure_skip_verify: true
-```
-
-`job_name` must be unique across all entries in the file.
-
-**Reload without restarting Prometheus:**
-
-```bash
-curl -X POST http://<prometheus-host>:9090/-/reload
-```
-
-Verify the new target is **UP** at `http://<prometheus-host>:9090/targets`.
-Metrics appear immediately in Grafana against the existing Prometheus datasource;
-build a new dashboard or panel for them (the ERSAP overview dashboard shows only
-`ersap_*` series).
-
-**Perlmutter — ephemeral Slurm nodes**: if the exporter runs on an allocated node
-whose hostname changes per job, use `file_sd_configs` instead of `static_configs`
-— see `HOWTO-perlmutter.md` § 4 for the full pattern.
+Any component that exposes a Prometheus-format `/metrics` endpoint can be
+scraped alongside the ERSAP exporter — no code changes to ERSAP required.
+Edit the Prometheus scrape config and append a new job under `scrape_configs`;
+see [`docker/README.md`](docker/README.md#adding-an-external-metrics-endpoint)
+for the full annotated reference (Docker Compose) or
+[`HOWTO-perlmutter.md`](HOWTO-perlmutter.md#4-add-an-external-metrics-endpoint-to-the-monitors-prometheus)
+for the Perlmutter (`ersap.yml`) variant.
 
 ---
 
@@ -392,9 +323,7 @@ observability stack.
 
 | Document | What it covers |
 |---|---|
-| [`docker/README.md`](docker/README.md) | Building the ERSAP image, running containers, the Docker Compose observability stack |
-| [`docker/observability/Remote_Monitor_Readme.md`](docker/observability/Remote_Monitor_Readme.md) | Full setup guide for the Prometheus + Grafana Docker Compose stack: prerequisites, startup, adding external scrape targets, stopping |
-| [`docker/observability/Grafana_Dashboard_Config.md`](docker/observability/Grafana_Dashboard_Config.md) | Panel catalog with every PromQL query, how to add and edit panels, template variables, PromQL patterns, unit IDs |
+| [`docker/README.md`](docker/README.md) | Building the ERSAP image, running containers, the complete Docker Compose monitoring stack, Grafana panel configuration |
 | [`src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md`](src/main/java/org/jlab/epsci/ersap/util/prometheus/README.md) | PrometheusExporter reference: every option, the full metric catalogue, labels, filters, reconnection, alert rules |
 | [`HOWTO-perlmutter.md`](HOWTO-perlmutter.md) | Perlmutter quick-start: four Slurm scripts, one-time setup, adding external scrape targets, `file_sd_configs` for ephemeral nodes |
 

@@ -316,10 +316,9 @@ curl -X POST http://<monitor-node>:9090/-/reload
 ### Viewing the metrics in Grafana
 
 The new job's metrics are immediately queryable in Grafana against the existing
-Prometheus datasource. The ERSAP overview dashboard only shows `ersap_*` series,
-so build a new dashboard or panel for your external metrics. See
-[`docker/observability/Grafana_Dashboard_Config.md`](docker/observability/Grafana_Dashboard_Config.md)
-for the panel JSON format and PromQL patterns.
+Prometheus datasource. The ERSAP overview dashboard only shows `ersap_*` series.
+To add panels for your external metrics — JSON format, PromQL patterns, unit IDs,
+template variables — see [`docker/README.md § Grafana configuration`](docker/README.md#3-grafana-configuration).
 
 ### Ephemeral hosts
 

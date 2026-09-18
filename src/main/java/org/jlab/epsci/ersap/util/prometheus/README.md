@@ -765,3 +765,13 @@ The fixtures use the real wire format: `MonitorReportFactory` (in `org.jlab.epsc
 next to the existing `RuntimeDataFactory`) feeds the JSON through the same
 `DpeRegistrationData`/`DpeRuntimeData` constructors that `ErsapSubscriptions` uses. No test
 needs a running Monitor FE.
+
+## See also
+
+* [`docker/README.md`](../../../../../../../../../docker/README.md) — Docker
+  Compose monitoring stack setup, external scrape targets, full Grafana
+  configuration guide (panel catalog, PromQL patterns, adding panels).
+* [`README.md`](../../../../../../../../../README.md#observability) — how to
+  start the Monitor FE and the exporter.
+* [`HOWTO-perlmutter.md`](../../../../../../../../../HOWTO-perlmutter.md) —
+  Perlmutter Slurm deployment, adding external targets to `ersap.yml`.
