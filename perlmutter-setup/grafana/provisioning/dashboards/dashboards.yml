@@ -8,4 +8,4 @@ providers:
     disableDeletion: false
     updateIntervalSeconds: 30
     options:
-      path: /global/homes/g/gurjyan/grafana/dashboards
+      path: __HOME__/grafana/dashboards
