@@ -91,39 +91,110 @@ Any component that exposes a Prometheus-format `/metrics` endpoint (custom
 exporter, third-party service, another pipeline) can be scraped by the
 Prometheus running inside the monitor job — no code changes to ERSAP required.
 
-Edit `perlmutter-setup/prometheus/ersap.yml` and append a job under
-`scrape_configs`:
+### The file to edit
+
+`perlmutter-setup/prometheus/ersap.yml` is the Prometheus configuration used on
+Perlmutter. It ships with one job that covers the ERSAP PrometheusExporter:
 
 ```yaml
-  - job_name: sagips-exporter
-    metrics_path: /metrics        # omit if default
-    scrape_interval: 15s          # omit to inherit global
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: ersap-monitor          # the ERSAP PrometheusExporter
+    metrics_path: /metrics
+    scrape_interval: 15s
     static_configs:
-      - targets: ["<host>:<port>"]   # e.g. "nid001234:9200" or "localhost:9200"
-        labels:
-          pipeline: "mypipe"         # any labels you want on every series
-          user:     "$USER"
+      - targets: ["localhost:9095"]
 ```
 
-Only `job_name` and `targets` are required. Add `basic_auth`, `scheme: https`,
-or `tls_config` only if the endpoint needs them.
+Append an additional entry under `scrape_configs` for every external endpoint
+you want to scrape.
 
-Redeploy and reload — no monitor restart needed:
+### Minimal entry — only `job_name` and `targets` are required
+
+```yaml
+  - job_name: my-exporter
+    static_configs:
+      - targets: ["nid001234:8000"]
+```
+
+`metrics_path` defaults to `/metrics` and `scrape_interval` inherits the global
+`15s`, so nothing else is needed for a plain HTTP endpoint on any port.
+
+### Full annotated entry
+
+```yaml
+  - job_name: my-exporter
+
+    # Path Prometheus calls on each target (default: /metrics).
+    metrics_path: /metrics
+
+    # Per-job overrides; omit to inherit the global values.
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+    # Static target list. Multiple groups can carry different labels.
+    static_configs:
+      - targets:
+          - "nid001234:8000"      # Slurm compute node + port
+          - "localhost:8000"      # or the same node as the monitor
+        labels:
+          pipeline: "mypipe"      # any key/value pairs added to every series
+          user:     "gurjyan"
+
+    # Only needed if the endpoint requires HTTP Basic Auth.
+    # basic_auth:
+    #   username: "user"
+    #   password: "secret"
+
+    # Only needed for HTTPS endpoints.
+    # scheme: https
+    # tls_config:
+    #   insecure_skip_verify: true
+```
+
+`job_name` must be unique across all entries in the file.
+
+### Redeploy and reload — no monitor restart needed
 
 ```bash
-bash ~/ersap-java/perlmutter-setup/deploy.sh          # copies edited ersap.yml into $HOME/prometheus/
-curl -X POST http://<monitor-node>:9090/-/reload      # hot-reload Prometheus
+# 1. copy the edited file into the running Prometheus data directory
+bash ~/ersap-java/perlmutter-setup/deploy.sh
+
+# 2. tell Prometheus to reload its config (no restart, no gap in data)
+curl -X POST http://<monitor-node>:9090/-/reload
+
+# 3. verify the new target appears as UP
+# open http://<monitor-node>:9090/targets in a browser (via the SSH tunnel)
 ```
 
-Verify at `http://<monitor-node>:9090/targets` — the new job should be **UP**.
-Metrics are then queryable in Grafana against the existing Prometheus
-datasource (build a new dashboard/panel; the ERSAP overview dashboard only
-shows `ersap_*` series).
+### Viewing the metrics in Grafana
 
-**Ephemeral hosts**: if the exporter runs on a Slurm-allocated node whose
-hostname changes per job, hard-coding it in `ersap.yml` won't scale — switch
-that job to `file_sd_configs` instead (target JSON written to `$HOME` on
-job start, deleted on exit).
+The new job's metrics are immediately queryable in Grafana against the existing
+Prometheus datasource. The ERSAP overview dashboard only shows `ersap_*` series,
+so build a new dashboard or panel for your external metrics.
+
+### Ephemeral hosts
+
+If the exporter runs on a Slurm-allocated node whose hostname changes per job,
+hard-coding it in `ersap.yml` won't scale. Switch that job to `file_sd_configs`
+instead: write the target JSON to `$HOME` when the job starts and delete it on
+exit, then point `ersap.yml` at that file:
+
+```yaml
+  - job_name: my-exporter
+    file_sd_configs:
+      - files: ["/global/homes/g/gurjyan/my-exporter-targets.json"]
+        refresh_interval: 30s
+```
+
+The target file format:
+
+```json
+[{"targets": ["nid001234:8000"], "labels": {"pipeline": "mypipe"}}]
+```
 
 ---
 
