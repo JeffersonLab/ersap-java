@@ -1,69 +1,23 @@
-#!/bin/bash
-#SBATCH --job-name=ersap-monitor
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=8G
-#SBATCH --time=30-00:00:00
-#SBATCH --constraint=cron
-#SBATCH --qos=workflow
-#SBATCH --dependency=singleton
-#SBATCH --account=amsc016
-#SBATCH --output=logs/monitor-%j.out
-#SBATCH --error=logs/monitor-%j.err
-#SBATCH --signal=B:TERM@60
+#!/usr/bin/env bash
 # =============================================================================
-# ERSAP monitor service — Perlmutter workflow allocation hosting:
-#   1) j_dpe              (monitor FE DPE, ZeroMQ,  --port  MONITOR_PORT)
-#   2) PrometheusExporter (Java class, HTTP        :EXPORTER_PORT /metrics)
-#   3) prometheus         (HTTP                    :PROM_PORT)
-#   4) grafana-server     (HTTP                    :GRAFANA_PORT)
+# monitor-stack.sh — sourced by monitor.slurm and monitor-longrun.slurm.
+# Do NOT execute directly.
 #
-# Pipeline (processing) nodes are launched elsewhere. They report to this
-# monitor via  ERSAP_MONITOR_FE = "<MONITOR_IP>%<MONITOR_PORT>_java".
+# Caller must set all CONFIGURATION variables before sourcing, and must have
+# already called `set -euo pipefail`.
 #
-# Requires NERSC approval for workflow QOS. Requests 2 CPUs / 8 GB for 30 days.
-# Resource sizes are starting estimates; adjust after measuring usage.
-# sbatch does not automatically restart this service after failure or expiry.
-# Prometheus uses temporary RAM-backed storage; history is not reused on restart.
-#
-# Submit from the repo root:
-#     mkdir -p logs
-#     sbatch perlmutter-ersap-monitor.slurm
-#
-# Discover the allocated monitor node after submission:
-#     squeue -j <job-id> -o "%.18i %.9P %.30j %.8u %.2t %.10M %.6D %R"
-#     scontrol show job <job-id>
-#     scontrol show hostnames "$(squeue -h -j <job-id> -o '%N')"
-#     cat  logs/monitor-<job-id>/monitor-info.txt
-#     tail -f logs/monitor-<job-id>.out
-#
-# Cancel:
-#     scancel <job-id>
+# Required variables (set by the calling script):
+#   ERSAP_HOME, PROM_HOME, GRAFANA_HOME
+#   MONITOR_PORT, EXPORTER_PORT, PROM_PORT, GRAFANA_PORT
+#   SESSION, STARTUP_TIMEOUT, SHUTDOWN_TIMEOUT
+#   PROM_STORAGE   — "tmpfs" (short jobs) or "persistent" (longrun)
+#   MONITOR_TYPE   — "regular" or "longrun" (written into monitor-info.txt)
 # =============================================================================
-
-set -euo pipefail
-
-# -----------------------------------------------------------------------------
-# CONFIGURATION — override by exporting before `sbatch`
-# -----------------------------------------------------------------------------
-: "${ERSAP_HOME:=/global/homes/g/gurjyan/work/ersap_installation/ersap_home}"
-: "${PROM_HOME:=$HOME/prometheus}"
-: "${GRAFANA_HOME:=$HOME/grafana}"
-: "${MONITOR_PORT:=19000}"    # ZeroMQ port for j_dpe (9000 is busy on Perlmutter)
-: "${EXPORTER_PORT:=9095}"    # HTTP /metrics
-: "${PROM_PORT:=9090}"        # Prometheus HTTP
-: "${GRAFANA_PORT:=3000}"     # Grafana HTTP
-: "${SESSION:=test}"
-: "${STARTUP_TIMEOUT:=90}"    # seconds to wait for each service to become ready
-: "${SHUTDOWN_TIMEOUT:=20}"   # graceful-stop budget before SIGKILL
-
-export ERSAP_HOME
 
 # -----------------------------------------------------------------------------
 # LOG LAYOUT
 # -----------------------------------------------------------------------------
 JOB_ID="${SLURM_JOB_ID:-manual-$$}"
-#REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${SLURM_SUBMIT_DIR:?Submit with sbatch from the repository root}"
 LOG_DIR="$REPO_DIR/logs/monitor-${JOB_ID}"
 mkdir -p "$LOG_DIR"
@@ -81,7 +35,7 @@ log() {
 }
 
 # -----------------------------------------------------------------------------
-# HOST DISCOVERY (runs on the allocated workflow host; may also be the submit host)
+# HOST DISCOVERY (runs on the allocated compute node, NOT on the submit host)
 # -----------------------------------------------------------------------------
 MONITOR_HOST="$(hostname -s)"
 MONITOR_HOST_FQDN="$(hostname -f 2>/dev/null || hostname)"
@@ -218,9 +172,17 @@ if (( missing )); then
     log "aborting: install/deploy the missing components (see perlmutter-setup/deploy.sh)"
     exit 1
 fi
-#mkdir -p "$PROM_HOME/data"
-PROM_DATA_DIR="$(mktemp -d "/dev/shm/ersap-prometheus-${SLURM_JOB_ID}.XXXXXX")"
-log "Prometheus data directory: $PROM_DATA_DIR"
+
+# Prometheus data directory — tmpfs for short jobs (survives restart of Prometheus
+# but not the node), persistent disk for long-running jobs.
+if [[ "${PROM_STORAGE:-tmpfs}" == "persistent" ]]; then
+    PROM_DATA_DIR="$PROM_HOME/data"
+    mkdir -p "$PROM_DATA_DIR"
+    log "Prometheus data directory: $PROM_DATA_DIR (persistent)"
+else
+    PROM_DATA_DIR="$(mktemp -d "/dev/shm/ersap-prometheus-${SLURM_JOB_ID:-$$}.XXXXXX")"
+    log "Prometheus data directory: $PROM_DATA_DIR (tmpfs)"
+fi
 
 cd "$REPO_DIR"
 
@@ -249,13 +211,14 @@ EXPORTER_CMD=(
 PROM_CMD=(
     "$PROM_HOME/prometheus"
     --config.file="$PROM_HOME/ersap.yml"
-    #    --storage.tsdb.path="$PROM_HOME/data"
     --storage.tsdb.path="$PROM_DATA_DIR"
     --storage.tsdb.retention.time=7d
-    # Retention target, not a hard cap: WAL, head data and compaction need extra space.
-    --storage.tsdb.retention.size=1GB
     --web.listen-address="0.0.0.0:$PROM_PORT"
 )
+# Persistent storage: add a size cap so the disk doesn't fill unexpectedly.
+if [[ "${PROM_STORAGE:-tmpfs}" == "persistent" ]]; then
+    PROM_CMD+=(--storage.tsdb.retention.size=1GB)
+fi
 
 GRAFANA_CMD=(
     "$GRAFANA_HOME/bin/grafana-server"
@@ -296,7 +259,6 @@ wait_for "grafana" "${PIDS[grafana]}" "$STARTUP_TIMEOUT" \
 # Confirm exporter has actually attached to j_dpe (metric value must be 1).
 EXPORTER_UP="$(curl -sf --max-time 5 "http://127.0.0.1:${EXPORTER_PORT}/metrics" 2>/dev/null \
     | awk '/^ersap_prometheus_exporter_up([ {]|$)/{print $NF; exit}' || true)"
-#if [[ "$EXPORTER_UP" != "1" ]]; then
 if ! awk -v value="$EXPORTER_UP" 'BEGIN { exit !(value != "" && value + 0 == 1) }'; then
     log "ERROR: exporter not connected to monitor FE (ersap_prometheus_exporter_up=${EXPORTER_UP:-<absent>})"
     shutdown 1
@@ -318,17 +280,23 @@ done
     echo "generated: $(date -Iseconds)"
     echo
     echo "[slurm]"
-    echo "SLURM_JOB_ID           = ${SLURM_JOB_ID:-}"
-    echo "SLURM_JOB_NAME         = ${SLURM_JOB_NAME:-}"
-    echo "SLURM_JOB_NODELIST     = ${NODELIST_RAW}"
+    echo "SLURM_JOB_ID              = ${SLURM_JOB_ID:-}"
+    echo "SLURM_JOB_NAME            = ${SLURM_JOB_NAME:-}"
+    echo "SLURM_JOB_NODELIST        = ${NODELIST_RAW}"
     echo "SLURM_NODELIST (expanded) = ${NODELIST_EXPANDED}"
-    echo "SLURM_JOB_PARTITION    = ${SLURM_JOB_PARTITION:-}"
-    echo "SLURM_JOB_QOS          = ${SLURM_JOB_QOS:-}"
-    echo "SLURM_JOB_ACCOUNT      = ${SLURM_JOB_ACCOUNT:-}"
-    echo "SLURM_SUBMIT_HOST      = ${SLURM_SUBMIT_HOST:-}   # login/submit host; may also host the monitor"
-    echo "SLURM_SUBMIT_DIR       = ${SLURM_SUBMIT_DIR:-}"
+    echo "SLURM_JOB_PARTITION       = ${SLURM_JOB_PARTITION:-}"
+    echo "SLURM_JOB_QOS             = ${SLURM_JOB_QOS:-}"
+    echo "SLURM_JOB_ACCOUNT         = ${SLURM_JOB_ACCOUNT:-}"
+    echo "SLURM_SUBMIT_HOST         = ${SLURM_SUBMIT_HOST:-}   # login/submit host, NOT the monitor"
+    echo "SLURM_SUBMIT_DIR          = ${SLURM_SUBMIT_DIR:-}"
     echo
-    echo "[host — allocated workflow host]"
+    echo "[allocation type]"
+    case "${MONITOR_TYPE:-regular}" in
+        longrun) echo "type = workflow (cron, long-running)" ;;
+        *)       echo "type = regular (exclusive cpu node)"  ;;
+    esac
+    echo
+    echo "[host — allocated monitor node]"
     echo "hostname (short)       = ${MONITOR_HOST}"
     echo "hostname -f (FQDN)     = ${MONITOR_HOST_FQDN}"
     echo "primary IP             = ${MONITOR_IP}"
@@ -352,6 +320,7 @@ done
     echo "Prometheus config      = ${PROM_HOME}/ersap.yml"
     echo "Grafana config         = ${GRAFANA_HOME}/conf/custom.ini"
     echo "Session                = ${SESSION}"
+    echo "Prometheus storage     = ${PROM_STORAGE:-tmpfs}  (${PROM_DATA_DIR})"
     echo
     echo "[processes]"
     echo "j_dpe        PID ${PIDS[j_dpe]}"
@@ -409,7 +378,7 @@ cat <<BANNER
   Monitor node:      ${MONITOR_HOST_FQDN}  (${MONITOR_IP})
   Monitor endpoint:  ${ERSAP_MONITOR_FE}
   Prometheus:        http://${MONITOR_HOST}:${PROM_PORT}
-  Grafana:           http://${MONITOR_HOST}:${GRAFANA_PORT}
+  Grafana:           http://${MONITOR_HOST}:${GRAFANA_PORT}   (admin/changeme)
   Processes:         j_dpe=${PIDS[j_dpe]}  exporter=${PIDS[exporter]}  prometheus=${PIDS[prometheus]}  grafana=${PIDS[grafana]}
   Log directory:     ${LOG_DIR}
   Info file:         ${INFO_FILE}
@@ -437,7 +406,7 @@ while true; do
             shutdown 1
         fi
     done
-    # Poll child liveness every 5 seconds; wait allows signal traps to run.
+    # Poll every 5 s; `wait` allows signal traps to fire immediately.
     sleep 5 &
     wait $! 2>/dev/null || true
 done

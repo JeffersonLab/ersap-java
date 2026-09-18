@@ -18,16 +18,16 @@
 # monitor via ERSAP_MONITOR_FE.
 #
 # Point at the monitor in ONE of two ways before `sbatch`:
-#   A) Source-based (recommended if you used perlmutter-ersap-monitor.slurm):
+#   A) Source-based (recommended if you used slurm/monitor*.slurm):
 #        export MONITOR_ENV_FILE=$PWD/logs/monitor-<monitor-jobid>/monitor.env
-#        sbatch perlmutter-ersap-processor.slurm
+#        sbatch slurm/processor.slurm
 #   B) Direct:
 #        export ERSAP_MONITOR_FE='<monitor-ip>%19000_java'
-#        sbatch perlmutter-ersap-processor.slurm
+#        sbatch slurm/processor.slurm
 #
 # Submit from the repo root:
 #     mkdir -p logs
-#     sbatch perlmutter-ersap-processor.slurm
+#     sbatch slurm/processor.slurm
 #
 # Job exit code = pipeline exit code.
 # =============================================================================

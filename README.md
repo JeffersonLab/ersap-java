@@ -205,17 +205,17 @@ container image:
 
 | Script | Purpose |
 |---|---|
-| `perlmutter-ersap-monitor.slurm`          | monitor stack only, on an exclusive `regular`-QOS compute node |
-| `perlmutter-ersap-monitor-longrun.slurm`  | monitor stack only, on a `workflow`-QOS/`cron`-constraint node meant for long-running services (currently sized for 30 days; requires NERSC to approve `workflow` QOS for your account) |
-| `perlmutter-ersap-processor.slurm`        | one pipeline container reporting to a remote monitor |
-| `perlmutter-ersap-allinone.slurm`         | monitor **and** one pipeline on the same node |
+| `slurm/monitor.slurm`          | monitor stack only, on an exclusive `regular`-QOS compute node |
+| `slurm/monitor-longrun.slurm`  | monitor stack only, on a `workflow`-QOS/`cron`-constraint node meant for long-running services (currently sized for 30 days; requires NERSC to approve `workflow` QOS for your account) |
+| `slurm/processor.slurm`        | one pipeline container reporting to a remote monitor |
+| `slurm/allinone.slurm`         | monitor **and** one pipeline on the same node |
 
 Use port 19000 instead of 9000 (9000 is busy on Perlmutter); `j_dpe --port`
 and `--monitor-port` must match.
 
 ### Monitor-only allocation (one compute node)
 
-Use `perlmutter-ersap-monitor.slurm` (or `perlmutter-ersap-monitor-longrun.slurm`
+Use `slurm/monitor.slurm` (or `slurm/monitor-longrun.slurm`
 for a persistent, `workflow`-QOS deployment) when you want the monitor stack
 (`j_dpe` + `PrometheusExporter` + Prometheus + Grafana) to live in its own
 SLURM job, independent of any processing-node allocation. Pipeline nodes
@@ -228,8 +228,8 @@ job's stdout file):
 
 ```bash
 mkdir -p logs
-sbatch perlmutter-ersap-monitor.slurm
-# or: sbatch perlmutter-ersap-monitor-longrun.slurm
+sbatch slurm/monitor.slurm
+# or: sbatch slurm/monitor-longrun.slurm
 ```
 
 Edit the `#SBATCH --account=` line first if your NERSC repo is not `amsc016`.

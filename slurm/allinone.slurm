@@ -28,10 +28,10 @@
 # is cancelled.
 #
 # Submit from the repo root:
-#     mkdir -p logs
-#     sbatch perlmutter-ersap-allinone.slurm
-#
-# Discover / follow / cancel — see logs/allinone-<jobid>/monitor-info.txt.
+#     mkdir -p logs && sbatch slurm/allinone.slurm
+# Follow:
+#     tail -f logs/allinone-<job-id>.out
+#     cat  logs/allinone-<job-id>/monitor-info.txt
 # =============================================================================
 
 set -euo pipefail
@@ -68,7 +68,6 @@ export ERSAP_HOME
 # LOG LAYOUT
 # -----------------------------------------------------------------------------
 JOB_ID="${SLURM_JOB_ID:-manual-$$}"
-#REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${SLURM_SUBMIT_DIR:?Submit with sbatch from the repository root}"
 LOG_DIR="$REPO_DIR/logs/allinone-${JOB_ID}"
 mkdir -p "$LOG_DIR"
@@ -306,9 +305,10 @@ PIDS[grafana]=$!
 wait_for "grafana" "${PIDS[grafana]}" "$STARTUP_TIMEOUT" \
     http_ok "http://127.0.0.1:${GRAFANA_PORT}/api/health" || shutdown 1
 
+# Confirm exporter has actually attached to j_dpe (metric value must be 1).
 EXPORTER_UP="$(curl -sf --max-time 5 "http://127.0.0.1:${EXPORTER_PORT}/metrics" 2>/dev/null \
     | awk '/^ersap_prometheus_exporter_up([ {]|$)/{print $NF; exit}' || true)"
-if [[ "$EXPORTER_UP" != "1" ]]; then
+if ! awk -v value="$EXPORTER_UP" 'BEGIN { exit !(value != "" && value + 0 == 1) }'; then
     log "ERROR: exporter not connected to monitor FE (ersap_prometheus_exporter_up=${EXPORTER_UP:-<absent>})"
     shutdown 1
 fi
@@ -328,15 +328,15 @@ done
     echo "generated: $(date -Iseconds)"
     echo
     echo "[slurm]"
-    echo "SLURM_JOB_ID           = ${SLURM_JOB_ID:-}"
-    echo "SLURM_JOB_NAME         = ${SLURM_JOB_NAME:-}"
-    echo "SLURM_JOB_NODELIST     = ${NODELIST_RAW}"
+    echo "SLURM_JOB_ID              = ${SLURM_JOB_ID:-}"
+    echo "SLURM_JOB_NAME            = ${SLURM_JOB_NAME:-}"
+    echo "SLURM_JOB_NODELIST        = ${NODELIST_RAW}"
     echo "SLURM_NODELIST (expanded) = ${NODELIST_EXPANDED}"
-    echo "SLURM_JOB_PARTITION    = ${SLURM_JOB_PARTITION:-}"
-    echo "SLURM_JOB_QOS          = ${SLURM_JOB_QOS:-}"
-    echo "SLURM_JOB_ACCOUNT      = ${SLURM_JOB_ACCOUNT:-}"
-    echo "SLURM_SUBMIT_HOST      = ${SLURM_SUBMIT_HOST:-}   # login/submit host, NOT the compute node"
-    echo "SLURM_SUBMIT_DIR       = ${SLURM_SUBMIT_DIR:-}"
+    echo "SLURM_JOB_PARTITION       = ${SLURM_JOB_PARTITION:-}"
+    echo "SLURM_JOB_QOS             = ${SLURM_JOB_QOS:-}"
+    echo "SLURM_JOB_ACCOUNT         = ${SLURM_JOB_ACCOUNT:-}"
+    echo "SLURM_SUBMIT_HOST         = ${SLURM_SUBMIT_HOST:-}   # login/submit host, NOT the compute node"
+    echo "SLURM_SUBMIT_DIR          = ${SLURM_SUBMIT_DIR:-}"
     echo
     echo "[host — allocated compute node]"
     echo "hostname (short)       = ${MONITOR_HOST}"
@@ -506,6 +506,7 @@ while true; do
             shutdown 1
         fi
     done
+    # Poll every 5 s; `wait` allows signal traps to fire immediately.
     sleep 5 &
     wait $! 2>/dev/null || true
 done

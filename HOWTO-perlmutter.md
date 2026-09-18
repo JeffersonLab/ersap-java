@@ -4,10 +4,10 @@ Four single-node scripts. Pick one (or two, for monitor + processor).
 
 | Script | Purpose |
 |---|---|
-| `perlmutter-ersap-monitor.slurm`          | monitor stack only, on a normal **exclusive** compute node (`j_dpe` + exporter + Prometheus + Grafana) |
-| `perlmutter-ersap-monitor-longrun.slurm`  | the same monitor stack, but on a `workflow`-QOS **long-running** node — currently sized for 30 days |
-| `perlmutter-ersap-processor.slurm`        | one pipeline container, reports to a **remote** monitor |
-| `perlmutter-ersap-allinone.slurm`         | monitor **and** one pipeline on the same node |
+| `slurm/monitor.slurm`          | monitor stack only, on a normal **exclusive** compute node (`j_dpe` + exporter + Prometheus + Grafana) |
+| `slurm/monitor-longrun.slurm`  | the same monitor stack, but on a `workflow`-QOS **long-running** node — currently sized for 30 days |
+| `slurm/processor.slurm`        | one pipeline container, reports to a **remote** monitor |
+| `slurm/allinone.slurm`         | monitor **and** one pipeline on the same node |
 
 The monitor stack runs `j_dpe` (Monitor FE) + `PrometheusExporter` + Prometheus
 + Grafana. Pipeline nodes point at it via `ERSAP_MONITOR_FE`.
@@ -61,10 +61,10 @@ allocation if it differs.
 ### Prerequisites not in this repo
 
 - **`ERSAP_HOME`** — a pre-built ERSAP install (`./gradlew deploy` on your
-  build machine). Required by `monitor*.slurm` and `allinone.slurm`.
+  build machine). Required by `slurm/monitor*.slurm` and `slurm/allinone.slurm`.
 - **`podman-hpc` image** — the pipeline container image (default
-  `docker.io/gurjyan/pet-sro:v1`). Required by `processor.slurm` and
-  `allinone.slurm`. Pre-pull with `podman-hpc pull <image>` on a login node if
+  `docker.io/gurjyan/pet-sro:v1`). Required by `slurm/processor.slurm` and
+  `slurm/allinone.slurm`. Pre-pull with `podman-hpc pull <image>` on a login node if
   you want to skip the pull step inside the job.
 
 ---
@@ -73,10 +73,10 @@ allocation if it differs.
 
 Two variants — pick based on how long you need the stack to run:
 
-- **`perlmutter-ersap-monitor.slurm`** — `regular` QOS, `cpu` constraint,
+- **`slurm/monitor.slurm`** — `regular` QOS, `cpu` constraint,
   exclusive compute node (64 CPUs), up to 8 h by default. Use for ad hoc
   testing and debugging.
-- **`perlmutter-ersap-monitor-longrun.slurm`** — `workflow` QOS, `cron`
+- **`slurm/monitor-longrun.slurm`** — `workflow` QOS, `cron`
   constraint, lightweight long-running node, currently sized for 30 days.
   Uses `--dependency=singleton` so re-submitting under the same job name won't
   start a second copy. **Requires NERSC to have approved `workflow` QOS access
@@ -88,10 +88,10 @@ Two variants — pick based on how long you need the stack to run:
 cd ~/ersap-java && mkdir -p logs
 
 # long-running (preferred for production):
-sbatch perlmutter-ersap-monitor-longrun.slurm
+sbatch slurm/monitor-longrun.slurm
 
 # short / debug:
-sbatch --qos=debug --time=00:30:00 perlmutter-ersap-monitor.slurm
+sbatch --qos=debug --time=00:30:00 slurm/monitor.slurm
 ```
 
 Note the `JOB_ID` printed by `sbatch`.
@@ -168,7 +168,7 @@ child processes gracefully, waits up to 20 s, then `SIGKILL`s stragglers.
 
 ## 2. Processor only (monitor already running)
 
-`perlmutter-ersap-processor.slurm` runs the pipeline container on a separate
+`slurm/processor.slurm` runs the pipeline container on a separate
 compute node and points it at an already-running monitor stack.
 
 ### Submit
@@ -178,11 +178,11 @@ cd ~/ersap-java && mkdir -p logs
 
 # Option A — point at a running monitor job via its env file:
 export MONITOR_ENV_FILE=$PWD/logs/monitor-<monitor-JOB_ID>/monitor.env
-sbatch perlmutter-ersap-processor.slurm
+sbatch slurm/processor.slurm
 
 # Option B — set the monitor address directly:
 export ERSAP_MONITOR_FE='<monitor-ip>%19000_java'
-sbatch perlmutter-ersap-processor.slurm
+sbatch slurm/processor.slurm
 ```
 
 `MONITOR_ENV_FILE` is sourced by the script at startup; it exports
@@ -201,7 +201,7 @@ scancel <JOB_ID>     # stops the container cleanly via SIGTERM
 
 ## 3. Monitor + pipeline on one node
 
-`perlmutter-ersap-allinone.slurm` runs the full monitor stack and one pipeline
+`slurm/allinone.slurm` runs the full monitor stack and one pipeline
 container on a single exclusive compute node. The job exits automatically when
 the pipeline finishes; the monitor is torn down as part of the same cleanup
 trap.
@@ -210,7 +210,7 @@ trap.
 
 ```bash
 cd ~/ersap-java && mkdir -p logs
-sbatch perlmutter-ersap-allinone.slurm
+sbatch slurm/allinone.slurm
 ```
 
 ### Readiness and logs
@@ -366,7 +366,7 @@ The target file format:
 | `ersap_prometheus_exporter_up == 0` | The exporter can't reach the Monitor FE. Check `exporter.log`; verify `j_dpe` started on port `19000` |
 | Prometheus target DOWN | `curl http://<node>:9095/metrics` from the monitor node to isolate network vs config |
 | Grafana empty after tunnel | Confirm the tunnel is up (`ss -tlnp` locally); check the `$prefix` variable in the dashboard matches `--metric-prefix` (default `ersap`) |
-| `workflow` QOS job rejected | NERSC must approve `workflow` QOS for your account; use `perlmutter-ersap-monitor.slurm` until then |
+| `workflow` QOS job rejected | NERSC must approve `workflow` QOS for your account; use `slurm/monitor.slurm` until then |
 | Container fails to start | Check `pipeline.log`; re-run with `PIPELINE_PULL=1` if the image may be stale |
 
 ---
