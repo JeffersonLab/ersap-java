@@ -90,6 +90,106 @@ grafana/dashboards/ersap-overview.json          the ERSAP Overview dashboard
    The datasource and the **ERSAP Overview** dashboard (folder: `ERSAP`) are
    already provisioned — nothing to import manually.
 
+## Adding an external `/metrics` endpoint
+
+Any component that exposes a Prometheus-format `/metrics` endpoint (custom
+exporter, third-party service, another pipeline) can be scraped by this
+Prometheus instance — no code changes to ERSAP required.
+
+### The file to edit
+
+`prometheus/prometheus.yml` is the scrape configuration for this stack. It
+ships with one job that covers the ERSAP PrometheusExporter:
+
+```yaml
+scrape_configs:
+  - job_name: ersap-monitor
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["monitoring-host.example.org:9095"]
+        labels:
+          session: "prod"
+```
+
+Append an additional entry under `scrape_configs` for every external endpoint
+you want to scrape.
+
+### Minimal entry — only `job_name` and `targets` are required
+
+```yaml
+  - job_name: my-exporter
+    static_configs:
+      - targets: ["<host>:<port>"]   # e.g. "10.0.0.5:8000" or "localhost:9200"
+```
+
+`metrics_path` defaults to `/metrics` and `scrape_interval` inherits the
+global `15s`, so nothing else is needed for a plain HTTP endpoint on any port.
+
+### Full annotated entry
+
+```yaml
+  - job_name: my-exporter
+
+    # Path Prometheus calls on each target (default: /metrics).
+    metrics_path: /metrics
+
+    # Per-job overrides; omit to inherit the global values.
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+    # Static target list. Multiple groups can carry different labels.
+    static_configs:
+      - targets:
+          - "<host>:<port>"
+        labels:
+          pipeline: "mypipe"      # any key/value pairs added to every series
+
+    # Only needed if the endpoint requires HTTP Basic Auth.
+    # basic_auth:
+    #   username: "user"
+    #   password: "secret"
+
+    # Only needed for HTTPS endpoints.
+    # scheme: https
+    # tls_config:
+    #   insecure_skip_verify: true
+```
+
+`job_name` must be unique across all entries in the file.
+
+### Reload without restarting the stack
+
+Prometheus supports a hot config reload — no restart, no gap in scraped data:
+
+```bash
+curl -X POST http://localhost:9090/-/reload
+```
+
+If the reload is rejected, Prometheus likely found a syntax error in the file —
+check `docker compose logs prometheus` for the parse error.
+
+Alternatively, a full restart also picks up the change:
+
+```bash
+docker compose restart prometheus
+```
+
+### Verify and explore
+
+- `http://localhost:9090/targets` — the new job should show state **UP**. If
+  it's **DOWN**, run `curl http://<host>:<port>/metrics` directly from the
+  Docker host to isolate whether it's a config problem or a network
+  reachability problem.
+- `http://localhost:9090/graph` — query any metric from the new job by name.
+
+### Viewing the metrics in Grafana
+
+The new job's metrics are immediately queryable in Grafana against the existing
+Prometheus datasource. The ERSAP Overview dashboard only shows `ersap_*`
+series, so add a new dashboard or panel for your external metrics (see
+`Grafana_Dashboard_Config.md` for how to build and save panels).
+
 ## What's on the dashboard
 
 - Total processed events, failure rate, DPEs seen in the last 30s, average
