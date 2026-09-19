@@ -266,6 +266,12 @@ class RunCommand extends BaseCommand {
             this.name = name;
             this.process = builder.start();
             ErsapUtil.sleep(2000);
+            if (!process.isAlive()) {
+                throw new IOException(String.format(
+                        "%s DPE (%s) exited immediately after startup (exit=%d). "
+                        + "Check the DPE log for the real error.",
+                        name.language(), name, process.exitValue()));
+            }
         }
     }
 
