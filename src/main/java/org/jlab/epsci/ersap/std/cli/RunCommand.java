@@ -79,6 +79,7 @@ class RunCommand extends BaseCommand {
 
             cmd.addOption("-F");
             cmd.addOption("-f", feName);
+            cmd.addOption("-s", runUtils.getSession());
 
             cmd.addOption("-t", getThreads());
             if (config.hasValue(Config.REPORT_EVENTS)) {
