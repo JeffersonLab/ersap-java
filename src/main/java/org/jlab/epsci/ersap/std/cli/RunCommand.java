@@ -161,15 +161,22 @@ class RunCommand extends BaseCommand {
             Collections.shuffle(ports);
 
             for (Integer port : ports) {
-                int ctrlPort = port + 2;
-                try (ServerSocket socket = new ServerSocket(ctrlPort)) {
-                    socket.setReuseAddress(true);
+                if (portsAvailable(port, port + 1, port + 2)) {
                     return port;
-                } catch (IOException e) {
-                    continue;
                 }
             }
             throw new IllegalStateException("Cannot find an available port");
+        }
+
+        private static boolean portsAvailable(int... ports) {
+            for (int port : ports) {
+                try (ServerSocket s = new ServerSocket(port)) {
+                    s.setReuseAddress(true);
+                } catch (IOException e) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private boolean checkDpes(Set<ErsapLang> languages) {
