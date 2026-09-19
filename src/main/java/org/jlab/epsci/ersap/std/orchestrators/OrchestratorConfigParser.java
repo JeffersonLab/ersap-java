@@ -109,6 +109,8 @@ public class OrchestratorConfigParser {
             throw error("could not open configuration file", e);
         } catch (IOException e) {
             throw error(e);
+        } catch (IllegalArgumentException e) {
+            throw error("invalid environment variable syntax in configuration file", e);
         } catch (ClassCastException | YAMLException e) {
             throw error("invalid YAML configuration file", e);
         }

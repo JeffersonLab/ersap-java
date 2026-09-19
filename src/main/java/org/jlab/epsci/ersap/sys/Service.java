@@ -161,8 +161,10 @@ class Service extends AbstractActor {
                 return;
             }
         }
+        // Should be unreachable: the Semaphore guarantees a free engine exists.
+        // Release the permit and log rather than throwing, to avoid killing the callback thread.
         available.release();
-        throw new IllegalStateException("permit held but no free engine in " + name);
+        Logging.error("BUG: no free engine found after acquiring permit in configure() for %s", name);
     }
 
 
@@ -188,8 +190,10 @@ class Service extends AbstractActor {
                 return;
             }
         }
+        // Should be unreachable: the Semaphore guarantees a free engine exists.
+        // Release the permit and log rather than throwing, to avoid killing the callback thread.
         available.release();
-        throw new IllegalStateException("permit held but no free engine in " + name);
+        Logging.error("BUG: no free engine found after acquiring permit in execute() for %s", name);
     }
 
 

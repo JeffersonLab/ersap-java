@@ -120,6 +120,8 @@ public class EngineSpecification {
                 }
             } catch (IOException e) {
                 throw new ParseException(e);
+            } catch (IllegalArgumentException e) {
+                throw new ParseException("invalid environment variable syntax in spec file", e);
             } catch (YAMLException e) {
                 throw new ParseException(e);
             } finally {
