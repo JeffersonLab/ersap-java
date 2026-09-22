@@ -71,8 +71,30 @@ public final class PrometheusExporterConfig {
     /** Default delay between Monitor FE subscription attempts, in seconds. */
     public static final int DEFAULT_RECONNECT_INTERVAL = 10;
 
+    /**
+     * Default silence window after which a DPE's series are removed
+     * from {@code /metrics}, in seconds.
+     */
+    public static final int DEFAULT_DPE_STALE_TIMEOUT = 30;
+
+    /**
+     * Default interval between DPE-staleness sweeps, in seconds.
+     * Independent of {@link #DEFAULT_DPE_STALE_TIMEOUT}: with a 30 s stale
+     * timeout, a 5 s sweep removes an expired DPE within 5 s of expiry.
+     */
+    public static final int DEFAULT_DPE_STALE_SWEEP_INTERVAL = 5;
+
     /** Prefix of every exporter environment variable. */
     public static final String ENV_PREFIX = "ERSAP_PROM_";
+
+    /**
+     * Legacy environment variable name for the DPE stale timeout, kept so
+     * operators can point at it directly (Slurm scripts, docs) without the
+     * {@link #ENV_PREFIX} indirection. Same semantics as
+     * {@code ERSAP_PROM_DPE_STALE_TIMEOUT}; the {@code ERSAP_PROM_} variant
+     * wins when both are set, matching the general precedence rules.
+     */
+    public static final String ENV_DPE_STALE_TIMEOUT_ALIAS = "ERSAP_DPE_STALE_TIMEOUT_SECONDS";
 
     private static final String OPT_CONFIG = "config";
     private static final String OPT_MONITOR_HOST = "monitor-host";
@@ -88,6 +110,8 @@ public final class PrometheusExporterConfig {
     private static final String OPT_COUNTER_PATTERN = "counter-pattern";
     private static final String OPT_RECONNECT = "reconnect-interval";
     private static final String OPT_STALE = "stale-timeout";
+    private static final String OPT_DPE_STALE = "dpe-stale-timeout";
+    private static final String OPT_DPE_SWEEP = "dpe-stale-sweep-interval";
     private static final String OPT_MAX_SERIES = "max-series";
     private static final String OPT_TIMESTAMPS = "export-timestamps";
     private static final String OPT_JVM = "jvm-metrics";
@@ -109,6 +133,8 @@ public final class PrometheusExporterConfig {
     private final Pattern counterPattern;
     private final int reconnectIntervalSeconds;
     private final int staleTimeoutSeconds;
+    private final int dpeStaleTimeoutSeconds;
+    private final int dpeStaleSweepIntervalSeconds;
     private final int maxSeries;
     private final boolean exportTimestamps;
     private final boolean jvmMetrics;
@@ -132,6 +158,10 @@ public final class PrometheusExporterConfig {
         this.reconnectIntervalSeconds =
                 resolver.positiveInt(OPT_RECONNECT, DEFAULT_RECONNECT_INTERVAL);
         this.staleTimeoutSeconds = resolver.nonNegativeInt(OPT_STALE, 0);
+        this.dpeStaleTimeoutSeconds =
+                resolver.nonNegativeInt(OPT_DPE_STALE, DEFAULT_DPE_STALE_TIMEOUT);
+        this.dpeStaleSweepIntervalSeconds =
+                resolver.positiveInt(OPT_DPE_SWEEP, DEFAULT_DPE_STALE_SWEEP_INTERVAL);
         this.maxSeries = resolver.positiveInt(OPT_MAX_SERIES,
                 PrometheusMetricRegistry.DEFAULT_MAX_SERIES);
         this.exportTimestamps = resolver.flag(OPT_TIMESTAMPS, false);
@@ -296,6 +326,27 @@ public final class PrometheusExporterConfig {
     }
 
     /**
+     * Gets the silence window after which a DPE's exported series are
+     * removed from {@code /metrics}. The lifecycle is per {@code (session, dpe)}
+     * and is fed by {@code dpeReport} arrivals only; a DPE that reconnects
+     * later is re-registered as new samples arrive.
+     *
+     * @return the DPE stale timeout in seconds, or 0 when the feature is disabled
+     */
+    public int dpeStaleTimeoutSeconds() {
+        return dpeStaleTimeoutSeconds;
+    }
+
+    /**
+     * Gets the interval between DPE-staleness sweeps.
+     *
+     * @return the sweep interval, in seconds
+     */
+    public int dpeStaleSweepIntervalSeconds() {
+        return dpeStaleSweepIntervalSeconds;
+    }
+
+    /**
      * Gets the cap on the number of exported time series.
      *
      * @return the maximum number of series
@@ -381,6 +432,12 @@ public final class PrometheusExporterConfig {
         sb.append(", reconnect=").append(reconnectIntervalSeconds).append('s');
         if (staleTimeoutSeconds > 0) {
             sb.append(", stale-timeout=").append(staleTimeoutSeconds).append('s');
+        }
+        if (dpeStaleTimeoutSeconds > 0) {
+            sb.append(", dpe-stale-timeout=").append(dpeStaleTimeoutSeconds).append('s')
+              .append(" (sweep=").append(dpeStaleSweepIntervalSeconds).append("s)");
+        } else {
+            sb.append(", dpe-stale-timeout=off");
         }
         return sb.toString();
     }
@@ -510,6 +567,14 @@ public final class PrometheusExporterConfig {
         parser.accepts(OPT_STALE, "Rebuild the subscription after this many seconds without a "
                 + "Monitor FE message. 0 disables it. Default: 0.")
                 .withRequiredArg().ofType(Integer.class).describedAs("seconds");
+        parser.accepts(OPT_DPE_STALE, "Remove a DPE's exported series after this many seconds "
+                + "without a dpeReport for it. Tracked per (session, dpe). "
+                + "Also read from $" + ENV_DPE_STALE_TIMEOUT_ALIAS + ". "
+                + "0 disables the feature. Default: " + DEFAULT_DPE_STALE_TIMEOUT + ".")
+                .withRequiredArg().ofType(Integer.class).describedAs("seconds");
+        parser.accepts(OPT_DPE_SWEEP, "Seconds between DPE-staleness sweeps. Independent of "
+                + "--" + OPT_DPE_STALE + ". Default: " + DEFAULT_DPE_STALE_SWEEP_INTERVAL + ".")
+                .withRequiredArg().ofType(Integer.class).describedAs("seconds");
         parser.accepts(OPT_MAX_SERIES, "Cap on the number of exported time series. Default: "
                 + PrometheusMetricRegistry.DEFAULT_MAX_SERIES + ".")
                 .withRequiredArg().ofType(Integer.class).describedAs("count");
@@ -625,6 +690,14 @@ public final class PrometheusExporterConfig {
             String env = System.getenv(envName(option));
             if (env != null && !env.trim().isEmpty()) {
                 return env.trim();
+            }
+            // Honour operator-facing environment aliases that predate or
+            // sidestep the ERSAP_PROM_ convention.
+            if (OPT_DPE_STALE.equals(option)) {
+                String alias = System.getenv(ENV_DPE_STALE_TIMEOUT_ALIAS);
+                if (alias != null && !alias.trim().isEmpty()) {
+                    return alias.trim();
+                }
             }
             String property = properties.getProperty(option);
             if (property != null && !property.trim().isEmpty()) {

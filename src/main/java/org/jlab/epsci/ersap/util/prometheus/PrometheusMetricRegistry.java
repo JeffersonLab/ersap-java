@@ -204,6 +204,71 @@ public final class PrometheusMetricRegistry extends Collector {
     }
 
     /**
+     * Removes every series that identifies the given DPE.
+     *
+     * <p>A series is considered "for that DPE" when both the {@code session}
+     * and {@code dpe} label values match — session is part of the identity to
+     * keep two DPEs in different sessions independent. Empty label values
+     * still match empty inputs, so this also removes series that were
+     * published without a session label when {@code session} is empty.
+     *
+     * <p>This walks the family maps directly; each removed entry drops one
+     * time series from the next scrape without unregistering the shared
+     * {@link io.prometheus.client.Collector}. The synthetic per-metric
+     * timestamp gauge is cleaned up too.
+     *
+     * @param session the session label value to match (never null; use "" for
+     *                the empty-label case)
+     * @param dpe     the canonical DPE label value to match (never null)
+     * @return the number of series removed
+     */
+    public int removeDpe(String session, String dpe) {
+        if (dpe == null) {
+            return 0;
+        }
+        String sessionValue = session == null ? "" : session;
+        int removed = 0;
+        for (Family family : families.values()) {
+            removed += family.removeDpe(sessionValue, dpe);
+        }
+        removed += removeDpeTimestamps(sessionValue, dpe);
+        if (removed > 0) {
+            series.addAndGet(-removed);
+        }
+        return removed;
+    }
+
+    private int removeDpeTimestamps(String session, String dpe) {
+        int sessionIdx = timestampLabelNames.indexOf(MonitorMetric.LABEL_SESSION);
+        int dpeIdx = timestampLabelNames.indexOf(MonitorMetric.LABEL_DPE);
+        if (dpeIdx < 0) {
+            return 0;
+        }
+        int removed = 0;
+        // ConcurrentHashMap allows safe removal during iteration
+        var iterator = timestamps.keySet().iterator();
+        while (iterator.hasNext()) {
+            List<String> key = iterator.next();
+            if (matchesDpe(key, sessionIdx, dpeIdx, session, dpe)) {
+                iterator.remove();
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    private static boolean matchesDpe(List<String> labelValues, int sessionIdx, int dpeIdx,
+                                      String session, String dpe) {
+        if (dpeIdx >= labelValues.size() || !dpe.equals(labelValues.get(dpeIdx))) {
+            return false;
+        }
+        if (sessionIdx < 0 || sessionIdx >= labelValues.size()) {
+            return true;
+        }
+        return session.equals(labelValues.get(sessionIdx));
+    }
+
+    /**
      * Gets the sanitizer used by this registry.
      *
      * @return the metric name sanitizer
@@ -357,6 +422,32 @@ public final class PrometheusMetricRegistry extends Collector {
                 }
             }
             return List.copyOf(aligned);
+        }
+
+        /**
+         * Removes every value whose label vector matches the given
+         * {@code (session, dpe)} pair. The caller adjusts the shared
+         * series counter with the returned count.
+         *
+         * @return the number of series removed from this family
+         */
+        int removeDpe(String session, String dpe) {
+            int sessionIdx = labelNames.indexOf(MonitorMetric.LABEL_SESSION);
+            int dpeIdx = labelNames.indexOf(MonitorMetric.LABEL_DPE);
+            if (dpeIdx < 0) {
+                // the family carries no dpe dimension, so it cannot own DPE state
+                return 0;
+            }
+            int removed = 0;
+            var iterator = values.keySet().iterator();
+            while (iterator.hasNext()) {
+                List<String> key = iterator.next();
+                if (matchesDpe(key, sessionIdx, dpeIdx, session, dpe)) {
+                    iterator.remove();
+                    removed++;
+                }
+            }
+            return removed;
         }
 
         /**

@@ -41,6 +41,10 @@ set -euo pipefail
 : "${SHUTDOWN_TIMEOUT:=20}"   # graceful-stop budget before SIGKILL
 : "${PROM_STORAGE:=tmpfs}"    # short job: RAM-backed, no persistence across restarts
 : "${MONITOR_TYPE:=regular}"  # written into monitor-info.txt
+: "${ERSAP_DPE_STALE_TIMEOUT_SECONDS:=30}"  # exporter drops a DPE's series after this silence
+: "${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS:=30}"  # Prometheus stops serving samples from unreachable targets after this
+export ERSAP_DPE_STALE_TIMEOUT_SECONDS
+export ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS
 
 export ERSAP_HOME
 

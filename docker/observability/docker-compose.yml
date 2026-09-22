@@ -18,6 +18,11 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=30d
+      # ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS: how long Prometheus continues to
+      # serve the last sample of a target that has stopped responding to
+      # scrapes. Once this window elapses, unreachable targets drop out of
+      # Grafana queries. Historical samples remain in the TSDB. Default 30s.
+      - --query.lookback-delta=${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS:-30}s
     ports:
       - "9090:9090"
 

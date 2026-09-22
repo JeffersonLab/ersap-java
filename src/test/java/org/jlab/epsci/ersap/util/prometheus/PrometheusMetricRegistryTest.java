@@ -306,6 +306,89 @@ class PrometheusMetricRegistryTest {
                         names.toArray(new String[0]), values.toArray(new String[0])), DELTA);
     }
 
+    // -------------------------------------------------------- removeDpe
+
+    @Test
+    void removeDpeDropsOnlyMatchingSeries() {
+        PrometheusMetricRegistry registry = registry();
+
+        registry.update(dpeGauge("dpe.cpu_usage_percent", 12.5, "session-1", "dpe-a"));
+        registry.update(dpeGauge("dpe.cpu_usage_percent", 20.0, "session-1", "dpe-b"));
+        registry.update(dpeGauge("dpe.memory_usage_bytes", 512, "session-1", "dpe-a"));
+
+        assertEquals(3, registry.seriesCount());
+
+        int removed = registry.removeDpe("session-1", "dpe-a");
+
+        assertEquals(2, removed);
+        assertEquals(1, registry.seriesCount());
+        assertNull(collectors.getSampleValue("ersap_dpe_cpu_usage_percent",
+                new String[] {"session", "dpe"}, new String[] {"session-1", "dpe-a"}));
+        assertEquals(20.0, collectors.getSampleValue("ersap_dpe_cpu_usage_percent",
+                new String[] {"session", "dpe"}, new String[] {"session-1", "dpe-b"}), DELTA);
+        assertNull(collectors.getSampleValue("ersap_dpe_memory_usage_bytes",
+                new String[] {"session", "dpe"}, new String[] {"session-1", "dpe-a"}));
+    }
+
+    @Test
+    void removeDpeIsSessionScoped() {
+        PrometheusMetricRegistry registry = registry();
+
+        registry.update(dpeGauge("dpe.cpu_usage_percent", 1, "sess-a", "dpe-x"));
+        registry.update(dpeGauge("dpe.cpu_usage_percent", 2, "sess-b", "dpe-x"));
+
+        assertEquals(1, registry.removeDpe("sess-a", "dpe-x"));
+
+        assertEquals(1, registry.seriesCount());
+        assertEquals(2.0, collectors.getSampleValue("ersap_dpe_cpu_usage_percent",
+                new String[] {"session", "dpe"}, new String[] {"sess-b", "dpe-x"}), DELTA);
+    }
+
+    @Test
+    void removeDpeIgnoresFamiliesWithoutDpeLabel() {
+        PrometheusMetricRegistry registry = registry();
+
+        registry.update(gaugeFor("requests", 7, "svc-a"));
+        assertEquals(0, registry.removeDpe("any", "any"));
+        assertEquals(1, registry.seriesCount());
+        assertEquals(7.0, collectors.getSampleValue("ersap_requests",
+                new String[] {"service"}, new String[] {"svc-a"}), DELTA);
+    }
+
+    @Test
+    void removeDpeAllowsSameLabelsToReappear() {
+        PrometheusMetricRegistry registry = registry();
+
+        registry.update(dpeGauge("dpe.cpu_usage_percent", 12, "s", "d"));
+        assertEquals(1, registry.removeDpe("s", "d"));
+        assertEquals(0, registry.seriesCount());
+
+        registry.update(dpeGauge("dpe.cpu_usage_percent", 33, "s", "d"));
+        assertEquals(1, registry.seriesCount());
+        assertEquals(33.0, collectors.getSampleValue("ersap_dpe_cpu_usage_percent",
+                new String[] {"session", "dpe"}, new String[] {"s", "d"}), DELTA);
+    }
+
+    @Test
+    void removeDpeCleansTimestampSeries() {
+        PrometheusMetricRegistry registry = PrometheusMetricRegistry
+                .builder(new MetricNameSanitizer("ersap"))
+                .exportTimestamps(true)
+                .build();
+        registry.register(collectors);
+
+        registry.update(MonitorMetric.builder("dpe.cpu_usage_percent")
+                .label(MonitorMetric.LABEL_SESSION, "s")
+                .label(MonitorMetric.LABEL_DPE, "d")
+                .value(50)
+                .timestampSeconds(1_700_000_000)
+                .build());
+        assertEquals(2, registry.seriesCount(), "one data series + one timestamp series");
+
+        registry.removeDpe("s", "d");
+        assertEquals(0, registry.seriesCount());
+    }
+
     // ----------------------------------------------------------- concurrency
 
     @Test
@@ -373,6 +456,16 @@ class PrometheusMetricRegistryTest {
         return MonitorMetric.builder(source)
                 .type(MetricType.GAUGE)
                 .label("service", service)
+                .value(value)
+                .build();
+    }
+
+    private static MonitorMetric dpeGauge(String source, double value,
+                                          String session, String dpe) {
+        return MonitorMetric.builder(source)
+                .type(MetricType.GAUGE)
+                .label(MonitorMetric.LABEL_SESSION, session)
+                .label(MonitorMetric.LABEL_DPE, dpe)
                 .value(value)
                 .build();
     }

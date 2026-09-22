@@ -31,6 +31,9 @@ class PrometheusExporterConfigTest {
         assumeTrue(System.getenv(ErsapConstants.ENV_MONITOR_FE) == null,
                 "ERSAP_MONITOR_FE is set in this environment");
         assumeTrue(System.getenv(PrometheusExporterConfig.ENV_PREFIX + "MONITOR_HOST") == null);
+        assumeTrue(System.getenv(
+                PrometheusExporterConfig.ENV_PREFIX + "DPE_STALE_TIMEOUT") == null);
+        assumeTrue(System.getenv(PrometheusExporterConfig.ENV_DPE_STALE_TIMEOUT_ALIAS) == null);
 
         PrometheusExporterConfig config = PrometheusExporterConfig.parse(new String[0]);
 
@@ -44,6 +47,10 @@ class PrometheusExporterConfigTest {
         assertEquals("ersap_", config.sanitizer().prefix());
         assertEquals(10, config.reconnectIntervalSeconds());
         assertEquals(0, config.staleTimeoutSeconds());
+        assertEquals(PrometheusExporterConfig.DEFAULT_DPE_STALE_TIMEOUT,
+                config.dpeStaleTimeoutSeconds());
+        assertEquals(PrometheusExporterConfig.DEFAULT_DPE_STALE_SWEEP_INTERVAL,
+                config.dpeStaleSweepIntervalSeconds());
         assertFalse(config.exportTimestamps());
         assertFalse(config.jvmMetrics());
         assertEquals("info", config.logLevel());
@@ -62,6 +69,8 @@ class PrometheusExporterConfigTest {
             "--metric-prefix", "myapp",
             "--reconnect-interval", "3",
             "--stale-timeout", "30",
+            "--dpe-stale-timeout", "45",
+            "--dpe-stale-sweep-interval", "3",
             "--max-series", "500",
             "--export-timestamps",
             "--jvm-metrics",
@@ -77,6 +86,8 @@ class PrometheusExporterConfigTest {
         assertEquals("myapp_", config.sanitizer().prefix());
         assertEquals(3, config.reconnectIntervalSeconds());
         assertEquals(30, config.staleTimeoutSeconds());
+        assertEquals(45, config.dpeStaleTimeoutSeconds());
+        assertEquals(3, config.dpeStaleSweepIntervalSeconds());
         assertEquals(500, config.maxSeries());
         assertTrue(config.exportTimestamps());
         assertTrue(config.jvmMetrics());
@@ -172,6 +183,12 @@ class PrometheusExporterConfigTest {
                 () -> parse("--reconnect-interval", "0"));
         assertThrows(PrometheusExporterConfig.ConfigException.class,
                 () -> parse("--stale-timeout", "-1"));
+        assertThrows(PrometheusExporterConfig.ConfigException.class,
+                () -> parse("--dpe-stale-timeout", "-5"));
+        assertThrows(PrometheusExporterConfig.ConfigException.class,
+                () -> parse("--dpe-stale-timeout", "not-a-number"));
+        assertThrows(PrometheusExporterConfig.ConfigException.class,
+                () -> parse("--dpe-stale-sweep-interval", "0"));
         assertThrows(PrometheusExporterConfig.ConfigException.class,
                 () -> parse("--max-series", "0"));
         assertThrows(PrometheusExporterConfig.ConfigException.class,

@@ -50,6 +50,10 @@ set -euo pipefail
 : "${SESSION:=test}"
 : "${STARTUP_TIMEOUT:=90}"
 : "${SHUTDOWN_TIMEOUT:=20}"
+: "${ERSAP_DPE_STALE_TIMEOUT_SECONDS:=30}"  # exporter drops a DPE's series after this silence
+: "${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS:=30}"  # Prometheus stops serving samples from unreachable targets after this
+export ERSAP_DPE_STALE_TIMEOUT_SECONDS
+export ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS
 
 # Pipeline
 : "${IMAGE:=docker.io/gurjyan/pet-sro:v1}"
@@ -252,13 +256,14 @@ DPE_CMD=(
 EXPORTER_CMD=(
     java -cp "$ERSAP_HOME/lib/*"
     org.jlab.epsci.ersap.util.prometheus.PrometheusExporter
-    --monitor-host    "$MONITOR_IP"
-    --monitor-port    "$MONITOR_PORT"
-    --session         "$SESSION"
-    --prometheus-host 0.0.0.0
-    --prometheus-port "$EXPORTER_PORT"
-    --metric-prefix   ersap
-    --log-level       info
+    --monitor-host      "$MONITOR_IP"
+    --monitor-port      "$MONITOR_PORT"
+    --session           "$SESSION"
+    --prometheus-host   0.0.0.0
+    --prometheus-port   "$EXPORTER_PORT"
+    --metric-prefix     ersap
+    --dpe-stale-timeout "$ERSAP_DPE_STALE_TIMEOUT_SECONDS"
+    --log-level         info
 )
 
 PROM_CMD=(
@@ -266,6 +271,7 @@ PROM_CMD=(
     --config.file="$PROM_HOME/ersap.yml"
     --storage.tsdb.path="$PROM_HOME/data"
     --storage.tsdb.retention.time=7d
+    --query.lookback-delta="${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS}s"
     --web.listen-address="0.0.0.0:$PROM_PORT"
 )
 

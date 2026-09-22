@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -277,6 +278,32 @@ class PrometheusExporterIntegrationTest {
         monitorFe.publishUserMetrics("test", MonitorReports.ENGINE,
                 MonitorReports.userMetrics("event_rate_hz", 77.0));
         assertEquals(77.0, sample("ersap_user_event_rate_hz"), DELTA);
+    }
+
+    @Test
+    void removesStaleDpeMetricsFromExposition() throws Exception {
+        // sweep every 1 s, expire after 1 s
+        start("--dpe-stale-timeout", "1", "--dpe-stale-sweep-interval", "1");
+        awaitSubscription();
+
+        monitorFe.publishDpeReport(MonitorReports.registration(), MonitorReports.runtime());
+        waitFor(() -> sample("ersap_dpe_cpu_usage_percent") != null);
+        assertEquals(38.4, sample("ersap_dpe_cpu_usage_percent"), DELTA);
+        assertEquals(1, exporter.dpeLifecycle().trackedCount());
+
+        // stop publishing and wait for the sweeper to notice
+        waitFor(() -> sample("ersap_dpe_cpu_usage_percent") == null);
+        assertTrue(!get("/metrics").contains("ersap_dpe_cpu_usage_percent{"),
+                "the expired DPE must not leak back into /metrics");
+        // container and service series carrying the same DPE label also vanish
+        assertNull(sample("ersap_container_requests_total"));
+        assertNull(sample("ersap_service_requests_total",
+                serviceLabels("EventRateMonitor")));
+
+        // reconnect: metrics reappear on the very next report
+        monitorFe.publishDpeReport(MonitorReports.registration(), MonitorReports.runtime());
+        waitFor(() -> sample("ersap_dpe_cpu_usage_percent") != null);
+        assertEquals(38.4, sample("ersap_dpe_cpu_usage_percent"), DELTA);
     }
 
     @Test

@@ -8,6 +8,7 @@ package org.jlab.epsci.ersap.util.prometheus;
 
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.hotspot.DefaultExports;
+import org.jlab.epsci.ersap.base.DpeName;
 import org.jlab.epsci.ersap.base.DpeRegistrationData;
 import org.jlab.epsci.ersap.base.DpeRuntimeData;
 import org.jlab.epsci.ersap.util.logging.Logger;
@@ -62,6 +63,7 @@ public final class PrometheusExporter implements AutoCloseable {
     private final MonitorMetricParser parser;
     private final MonitorFeSubscriber subscriber;
     private final MetricsHttpServer httpServer;
+    private final DpeLifecycle dpeLifecycle;
     private final CountDownLatch terminated = new CountDownLatch(1);
 
     /**
@@ -93,11 +95,14 @@ public final class PrometheusExporter implements AutoCloseable {
         }
 
         this.parser = new MonitorMetricParser(config.counterPattern(), ZoneId.systemDefault());
+        this.dpeLifecycle = new DpeLifecycle(metricRegistry,
+                config.dpeStaleTimeoutSeconds(), config.dpeStaleSweepIntervalSeconds());
         this.subscriber = new MonitorFeSubscriber(config, factory,
                 new MetricHandler(), selfMetrics);
         this.httpServer = new MetricsHttpServer(collectorRegistry, config.prometheusHost(),
                 config.prometheusPort(), subscriber::isSubscribed);
         this.subscriber.start();
+        this.dpeLifecycle.start();
     }
 
     /**
@@ -195,6 +200,15 @@ public final class PrometheusExporter implements AutoCloseable {
     }
 
     /**
+     * Gets the DPE lifecycle tracker.
+     *
+     * @return the tracker
+     */
+    public DpeLifecycle dpeLifecycle() {
+        return dpeLifecycle;
+    }
+
+    /**
      * Blocks until the exporter is closed.
      */
     public void awaitTermination() {
@@ -217,6 +231,11 @@ public final class PrometheusExporter implements AutoCloseable {
             logger.error("could not stop the Monitor FE subscriber: {}", e.toString());
         }
         try {
+            dpeLifecycle.close();
+        } catch (RuntimeException e) {
+            logger.error("could not stop the DPE lifecycle tracker: {}", e.toString());
+        }
+        try {
             httpServer.close();
         } catch (RuntimeException e) {
             logger.error("could not stop the Prometheus HTTP endpoint: {}", e.toString());
@@ -233,6 +252,19 @@ public final class PrometheusExporter implements AutoCloseable {
         @Override
         public void onDpeReport(DpeRegistrationData registration, DpeRuntimeData runtime) {
             apply(parser.parseDpeReport(registration, runtime));
+            touchDpe(registration, runtime);
+        }
+
+        private void touchDpe(DpeRegistrationData registration, DpeRuntimeData runtime) {
+            if (!dpeLifecycle.isEnabled()) {
+                return;
+            }
+            DpeName dpe = runtime == null ? null : runtime.name();
+            if (dpe == null) {
+                return;
+            }
+            String session = registration == null ? "" : registration.session();
+            dpeLifecycle.touch(session, dpe.canonicalName());
         }
 
         @Override

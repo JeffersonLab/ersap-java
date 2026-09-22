@@ -216,6 +216,9 @@ Precedence: **defaults < `--config` file < environment < command line.**
 | `--counter-pattern <re>` | `ERSAP_PROM_COUNTER_PATTERN` | `^total_.*\|.*_(total\|count\|counter)$` | which user metrics become counters; empty disables |
 | `--reconnect-interval <s>` | `ERSAP_PROM_RECONNECT_INTERVAL` | `10` | delay between subscription attempts |
 | `--stale-timeout <s>` | `ERSAP_PROM_STALE_TIMEOUT` | `0` (off) | resubscribe after this much silence |
+| `--dpe-stale-timeout <s>` | `ERSAP_PROM_DPE_STALE_TIMEOUT` (or `ERSAP_DPE_STALE_TIMEOUT_SECONDS`) | `30` | drop a DPE's exported series after this many seconds without a `dpeReport` for it; `0` disables |
+| `--dpe-stale-sweep-interval <s>` | `ERSAP_PROM_DPE_STALE_SWEEP_INTERVAL` | `5` | how often the exporter looks for expired DPEs |
+| *(scraper-side, not an exporter option)* | `ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS` | `30` | passed to Prometheus as `--query.lookback-delta`; when a scrape target stays unreachable this long, its samples stop appearing in Grafana instant queries (historical range queries are unaffected). Wired in by the Slurm scripts and `docker/observability/docker-compose.yml`. See the "Endpoint failure grace" section. |
 | `--max-series <n>` | `ERSAP_PROM_MAX_SERIES` | `20000` | cap on exported time series |
 | `--export-timestamps` | `ERSAP_PROM_EXPORT_TIMESTAMPS` | off | also export `ersap_metric_last_update_timestamp_seconds` |
 | `--jvm-metrics` | `ERSAP_PROM_JVM_METRICS` | off | also export the exporter's own JVM metrics |
@@ -444,6 +447,113 @@ were created without error. To also catch a Monitor FE that is up but silent, se
 subscription down and rebuilds it. It is off by default because an idle pipeline
 legitimately publishes nothing.
 
+## Stale-DPE lifecycle
+
+A DPE that stops sending `dpeReport` messages must not keep publishing stale
+CPU, memory, container and service series through `/metrics`. Every time a
+`dpeReport` arrives the exporter records
+`(session, dpe) → lastReportTimestamp` (using the reception time, never the
+Prometheus scrape time). A daemon thread sweeps that table every
+`--dpe-stale-sweep-interval` seconds (default `5`) and, for each entry whose
+age exceeds `--dpe-stale-timeout` seconds (default `30`), removes every label
+combination whose `session` and `dpe` labels match — from every metric family,
+including `ersap_dpe_*`, `ersap_container_*`, `ersap_service_*` and the
+per-metric timestamp gauge. The shared `Collector` object stays registered;
+only the affected series are dropped.
+
+* **Identity is `(session, dpe)`** — two DPEs in different sessions expire
+  independently.
+* **Prometheus TSDB is untouched.** Only the exporter's live view drops the
+  DPE; historical samples remain in Prometheus.
+* **Reconnection is transparent.** A DPE that comes back after expiration
+  simply re-registers its series on the next `dpeReport`.
+* **Disable the feature** with `--dpe-stale-timeout 0` (or
+  `ERSAP_DPE_STALE_TIMEOUT_SECONDS=0`) — the exporter then keeps every DPE it
+  has ever seen, matching the pre-lifecycle behaviour.
+
+Configuration precedence follows the general rules: command line >
+`ERSAP_PROM_DPE_STALE_TIMEOUT` > `ERSAP_DPE_STALE_TIMEOUT_SECONDS` > properties
+file > built-in default. The `ERSAP_DPE_STALE_TIMEOUT_SECONDS` alias exists so
+operator-facing tooling (Slurm scripts, docs) can name it without the
+`ERSAP_PROM_` prefix.
+
+```bash
+# override from a shell before submitting a Slurm job
+export ERSAP_DPE_STALE_TIMEOUT_SECONDS=60
+sbatch slurm/monitor.slurm
+
+# or set it directly from a properties file
+echo "dpe-stale-timeout=60" >> exporter.properties
+```
+
+The feature controls **only** the exporter's live view. It does not change
+Prometheus retention or delete historical samples.
+
+## Endpoint failure grace (scraper-side)
+
+The stale-DPE mechanism above lives inside the exporter and only covers the
+case where a DPE is still reachable but has stopped reporting. The
+complementary case — the **scraper** (Prometheus) can no longer reach an
+exporter / target at all — is handled by Prometheus itself, via
+`--query.lookback-delta`.
+
+When a scrape target fails, Prometheus stops adding new samples but keeps
+returning the last known value for up to `--query.lookback-delta` seconds. If
+you shorten that window, unreachable targets disappear from Grafana faster:
+
+```bash
+# in the Slurm scripts, monitor-stack.sh already wires this up:
+: "${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS:=30}"
+export ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS
+
+# and passes it on the Prometheus command line:
+prometheus \
+  --config.file=... \
+  --query.lookback-delta=${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS}s
+```
+
+The Docker Compose stack under `docker/observability/` picks up the same
+variable through Compose's environment substitution.
+
+Behaviour with the default `scrape_interval=15s` and grace `30s`:
+
+| Time since last successful scrape | Grafana behaviour                     |
+|-----------------------------------|---------------------------------------|
+| ≤ 30 s                            | last sample keeps being returned       |
+| > 30 s                            | series drop out of instant queries    |
+
+Notes:
+
+* **`--query.lookback-delta` should be at least `2 × scrape_interval`.** With
+  the default 15 s scrape interval, 30 s is the practical floor — going lower
+  risks dashboard flicker every time a scrape is slightly late.
+* **Historical Prometheus data is untouched.** A Grafana panel looking at an
+  earlier time range still shows the samples that were collected before the
+  target went dark. Only *instant* / *now* queries stop returning them.
+* **No exporter restart is needed** when a target comes back. Prometheus
+  resumes scraping and Grafana starts showing samples again on the next tick.
+* **Two independent mechanisms, one operator model:**
+
+  ```
+       Monitor FE / exporter
+                │
+    ┌───────────┴───────────┐
+    │                       │
+  DPE reachable but        Scraper (Prometheus)
+  no longer reporting      can no longer reach
+    │                       exporter/target
+    │                       │
+    ▼                       ▼
+  ERSAP_DPE_               ERSAP_ENDPOINT_
+  STALE_TIMEOUT_           FAILURE_GRACE_
+  SECONDS                  SECONDS
+  (exporter-side)          (Prometheus --query.lookback-delta)
+  ```
+
+  A single setting can be used for both because the operator intent — "stop
+  showing that DPE in Grafana after N seconds of silence" — is the same in
+  either case.
+
 ## Shutdown
 
 A JVM shutdown hook handles `SIGINT`, `SIGTERM` and normal exit. It stops the supervisor
@@ -666,6 +776,44 @@ ersap_prometheus_exporter_registered_metrics 18.0
 
 Counters are also accompanied by the `_created` gauges the Prometheus client emits for
 OpenMetrics compatibility; they are omitted above.
+
+## Verifying stale-DPE and endpoint-failure expiration
+
+**Case 1 — DPE stopped reporting** (exporter-side).
+Start two DPEs pointing at the same Monitor FE and confirm both appear in the
+exporter output:
+
+```bash
+curl -s http://localhost:9095/metrics | grep '^ersap_dpe_cpu_usage_percent'
+```
+
+Stop one DPE. Once `--dpe-stale-timeout` + `--dpe-stale-sweep-interval`
+seconds have passed (default 30 + 5), only the surviving DPE remains in
+`/metrics`.
+
+**Case 2 — exporter/target unreachable** (scraper-side).
+Kill the whole PrometheusExporter (or block port `9095`). Prometheus continues
+to serve the last known values until `--query.lookback-delta` seconds have
+elapsed since the last successful scrape (default `ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS=30`).
+After that:
+
+```
+count by (dpe) (ersap_dpe_cpu_usage_percent)   # returns 0 rows
+```
+
+on an instant query in Prometheus, and the corresponding Grafana panels go
+empty. A range query covering the pre-outage window still returns the
+historical samples — nothing is deleted from the TSDB.
+
+For both cases, the exposed timestamp of a live series is worth a sanity check:
+
+```
+time() - timestamp(ersap_dpe_cpu_usage_percent)
+```
+
+For every currently-exported DPE this stays small (roughly the scrape
+interval); the stopped or unreachable series disappear entirely instead of
+showing an ever-refreshed timestamp.
 
 ## Verifying the exporter sees what `TestMonitor` prints
 

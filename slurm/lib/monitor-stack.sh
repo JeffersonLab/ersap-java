@@ -196,16 +196,32 @@ DPE_CMD=(
     --session "$SESSION"
 )
 
+# DPE stale-metric timeout: after this many seconds without a dpeReport from a
+# DPE, its series are removed from the exporter's /metrics output. Owned by
+# the exporter — override by exporting ERSAP_DPE_STALE_TIMEOUT_SECONDS before
+# `sbatch` (or in MONITOR_ENV_FILE when the caller loads one).
+: "${ERSAP_DPE_STALE_TIMEOUT_SECONDS:=30}"
+export ERSAP_DPE_STALE_TIMEOUT_SECONDS
+
+# Endpoint failure grace: how long Prometheus will keep serving the last
+# sample of a target that has stopped responding to scrapes. Wired to
+# Prometheus's --query.lookback-delta so unreachable exporters drop out of
+# Grafana after this many seconds. TSDB retention is unaffected: historical
+# samples remain visible in past time ranges.
+: "${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS:=30}"
+export ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS
+
 EXPORTER_CMD=(
     java -cp "$ERSAP_HOME/lib/*"
     org.jlab.epsci.ersap.util.prometheus.PrometheusExporter
-    --monitor-host    "$MONITOR_IP"
-    --monitor-port    "$MONITOR_PORT"
-    --session         "$SESSION"
-    --prometheus-host 0.0.0.0
-    --prometheus-port "$EXPORTER_PORT"
-    --metric-prefix   ersap
-    --log-level       info
+    --monitor-host      "$MONITOR_IP"
+    --monitor-port      "$MONITOR_PORT"
+    --session           "$SESSION"
+    --prometheus-host   0.0.0.0
+    --prometheus-port   "$EXPORTER_PORT"
+    --metric-prefix     ersap
+    --dpe-stale-timeout "$ERSAP_DPE_STALE_TIMEOUT_SECONDS"
+    --log-level         info
 )
 
 PROM_CMD=(
@@ -213,6 +229,7 @@ PROM_CMD=(
     --config.file="$PROM_HOME/ersap.yml"
     --storage.tsdb.path="$PROM_DATA_DIR"
     --storage.tsdb.retention.time=7d
+    --query.lookback-delta="${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS}s"
     --web.listen-address="0.0.0.0:$PROM_PORT"
 )
 # Persistent storage: add a size cap so the disk doesn't fill unexpectedly.
@@ -320,6 +337,8 @@ done
     echo "Prometheus config      = ${PROM_HOME}/ersap.yml"
     echo "Grafana config         = ${GRAFANA_HOME}/conf/custom.ini"
     echo "Session                = ${SESSION}"
+    echo "DPE stale timeout      = ${ERSAP_DPE_STALE_TIMEOUT_SECONDS}s   (exporter drops silent DPEs)"
+    echo "Endpoint failure grace = ${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS}s   (Prometheus --query.lookback-delta)"
     echo "Prometheus storage     = ${PROM_STORAGE:-tmpfs}  (${PROM_DATA_DIR})"
     echo
     echo "[processes]"
@@ -364,6 +383,8 @@ EXPORTER_PORT=${EXPORTER_PORT}
 PROM_PORT=${PROM_PORT}
 GRAFANA_PORT=${GRAFANA_PORT}
 ERSAP_MONITOR_FE=${ERSAP_MONITOR_FE}
+ERSAP_DPE_STALE_TIMEOUT_SECONDS=${ERSAP_DPE_STALE_TIMEOUT_SECONDS}
+ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS=${ERSAP_ENDPOINT_FAILURE_GRACE_SECONDS}
 MONITOR_LOG_DIR=${LOG_DIR}
 EOF
 
