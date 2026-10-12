@@ -166,7 +166,7 @@ check_path exec "$ERSAP_HOME/bin/j_dpe"
 check_path dir  "$ERSAP_HOME/lib"
 check_path exec "$PROM_HOME/prometheus"
 check_path file "$PROM_HOME/ersap.yml"
-check_path exec "$GRAFANA_HOME/bin/grafana-server"
+check_path exec "$GRAFANA_HOME/bin/grafana"
 check_path file "$GRAFANA_HOME/conf/custom.ini"
 if (( missing )); then
     log "aborting: install/deploy the missing components (see perlmutter-setup/deploy.sh)"
@@ -238,7 +238,7 @@ if [[ "${PROM_STORAGE:-tmpfs}" == "persistent" ]]; then
 fi
 
 GRAFANA_CMD=(
-    "$GRAFANA_HOME/bin/grafana-server"
+    "$GRAFANA_HOME/bin/grafana" server
     --config="$GRAFANA_HOME/conf/custom.ini"
     --homepath="$GRAFANA_HOME"
 )

@@ -108,7 +108,7 @@ Grafana queries Prometheus and renders the dashboards.
 
 | Path | What it does |
 |---|---|
-| `observability/docker-compose.yml` | runs `prom/prometheus:v2.53.0` and `grafana/grafana:11.1.0` with named volumes |
+| `observability/docker-compose.yml` | runs `prom/prometheus:v2.53.0` and `grafana/grafana:13.2.3` with named volumes |
 | `observability/prometheus/prometheus.yml` | scrape config — tells Prometheus which hosts to poll and how often |
 | `observability/grafana/provisioning/datasources/datasource.yml` | auto-registers the Prometheus data source (UID `prometheus`, URL `http://prometheus:9090`) |
 | `observability/grafana/provisioning/dashboards/dashboards.yml` | tells Grafana to load any `.json` from the dashboards folder, re-checked every 30 s |

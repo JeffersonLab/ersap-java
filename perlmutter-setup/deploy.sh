@@ -113,7 +113,7 @@ copy_file "$REPO_DIR/grafana/dashboards/ersap-overview.json" \
 # Binary checks
 # -----------------------------------------------------------------------------
 printf '\nbinary check\n'
-for bin in "$HOME/prometheus/prometheus" "$HOME/grafana/bin/grafana-server"; do
+for bin in "$HOME/prometheus/prometheus" "$HOME/grafana/bin/grafana"; do
     if [[ -x "$bin" ]]; then
         log "found    $bin"
     else

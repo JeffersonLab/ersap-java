@@ -18,7 +18,7 @@
 #     1) j_dpe              (monitor FE DPE, ZeroMQ,  --port MONITOR_PORT)
 #     2) PrometheusExporter (HTTP :EXPORTER_PORT /metrics)
 #     3) prometheus         (HTTP :PROM_PORT)
-#     4) grafana-server     (HTTP :GRAFANA_PORT)
+#     4) grafana server     (HTTP :GRAFANA_PORT)
 #   Pipeline (foreground, primary workload):
 #     5) podman-hpc container running `ersap-shell` -> `run local`,
 #        reporting metrics to the local monitor via ERSAP_MONITOR_FE.
@@ -229,7 +229,7 @@ check_path exec "$ERSAP_HOME/bin/j_dpe"
 check_path dir  "$ERSAP_HOME/lib"
 check_path exec "$PROM_HOME/prometheus"
 check_path file "$PROM_HOME/ersap.yml"
-check_path exec "$GRAFANA_HOME/bin/grafana-server"
+check_path exec "$GRAFANA_HOME/bin/grafana"
 check_path file "$GRAFANA_HOME/conf/custom.ini"
 check_path dir  "$DATA_DIR"
 if ! command -v "$PODMAN" >/dev/null 2>&1; then
@@ -276,7 +276,7 @@ PROM_CMD=(
 )
 
 GRAFANA_CMD=(
-    "$GRAFANA_HOME/bin/grafana-server"
+    "$GRAFANA_HOME/bin/grafana" server
     --config="$GRAFANA_HOME/conf/custom.ini"
     --homepath="$GRAFANA_HOME"
 )

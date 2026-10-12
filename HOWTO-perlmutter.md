@@ -43,7 +43,7 @@ logic that both monitor variants share, organised into nine phases:
 | **Readiness helpers** | `port_listening <port>` — checks a TCP port is open; `http_ok <url>` — checks an HTTP endpoint returns 200; `wait_for <name> <pid> <timeout> <check>` — polls until the check passes or the process exits or times out |
 | **Pre-flight** | Verifies all required executables, directories, and config files exist before starting anything; aborts cleanly if any are missing. Sets `PROM_DATA_DIR` to `/dev/shm/...` (tmpfs, for `PROM_STORAGE=tmpfs`) or `$PROM_HOME/data` (persistent disk, for `PROM_STORAGE=persistent`) |
 | **Commands** | Assembles the four command arrays (`DPE_CMD`, `EXPORTER_CMD`, `PROM_CMD`, `GRAFANA_CMD`) from the caller's configuration variables. Adds `--storage.tsdb.retention.size=1GB` to Prometheus only when `PROM_STORAGE=persistent` |
-| **Startup** | Starts the four services in dependency order (`j_dpe` → `PrometheusExporter` → `prometheus` → `grafana-server`), waiting for each to pass its readiness check before starting the next. Verifies `ersap_prometheus_exporter_up == 1` before declaring success |
+| **Startup** | Starts the four services in dependency order (`j_dpe` → `PrometheusExporter` → `prometheus` → `grafana server`), waiting for each to pass its readiness check before starting the next. Verifies `ersap_prometheus_exporter_up == 1` before declaring success |
 | **Discovery files** | Writes `monitor-info.txt` (human-readable: all endpoints, PIDs, commands, log paths, SSH tunnel command) and `monitor.env` (machine-readable: key=value pairs that processor nodes can `source`). Prints the readiness banner to stdout |
 | **Supervision loop** | Polls all four PIDs every 5 s; if any exits unexpectedly, dumps its last 20 log lines and calls `shutdown 1` |
 
@@ -107,12 +107,27 @@ mv prometheus-${PROM_VER}.linux-amd64 $HOME/prometheus
 mkdir -p $HOME/prometheus/data
 
 # Grafana
-GRAF_VER=11.1.0
+GRAF_VER=13.2.3
 wget https://dl.grafana.com/oss/release/grafana-${GRAF_VER}.linux-amd64.tar.gz
 tar xzf grafana-${GRAF_VER}.linux-amd64.tar.gz
-mv grafana-v${GRAF_VER} $HOME/grafana
+mv grafana-${GRAF_VER} $HOME/grafana
 mkdir -p $HOME/grafana/{data,logs,plugins}
 ```
+
+> **Upgrading an existing install.** Grafana 13 renamed the start command: the
+> `grafana-server` binary is gone, replaced by the `grafana server` subcommand
+> (the Slurm scripts already use the new form). Two things to know before the
+> first start:
+>
+> - Back up `$HOME/grafana/data/grafana.db` first. Grafana migrates its SQLite
+>   schema forward on startup and the migration is **one-way** — a 13.x database
+>   cannot be opened by an older Grafana.
+> - Move the old tree aside rather than untarring over it
+>   (`mv $HOME/grafana $HOME/grafana.old`), then re-run `deploy.sh` to reinstall
+>   `conf/custom.ini`, the datasource, and the dashboard. Copy
+>   `grafana.old/data/grafana.db` into the new `data/` only if you want to keep
+>   saved dashboards and users; the provisioned ERSAP Overview dashboard is
+>   recreated from the repo either way.
 
 ### Clone the repo and deploy configs
 
@@ -225,7 +240,7 @@ tail -f logs/monitor-<JOB_ID>/grafana.log
 ```bash
 NODE=$(squeue -h -j <JOB_ID> -o '%N')
 ssh "$NODE" 'ss -tlnp | grep -E ":(19000|9095|9090|3000)"'
-ssh "$NODE" 'ps -o pid,cmd -p $(pgrep -d, -u $USER -f "j_dpe|PrometheusExporter|prometheus|grafana-server")'
+ssh "$NODE" 'ps -o pid,cmd -p $(pgrep -d, -u $USER -f "j_dpe|PrometheusExporter|prometheus|bin/grafana")'
 ```
 
 ### Cancel
@@ -469,7 +484,7 @@ tail -f logs/monitor-<JOB_ID>/grafana.log
 # inspect the running node
 NODE=$(squeue -h -j <JOB_ID> -o '%N')
 ssh "$NODE" 'ss -tlnp | grep -E ":(19000|9095|9090|3000)"'
-ssh "$NODE" 'ps -o pid,cmd -p $(pgrep -d, -u $USER -f "j_dpe|PrometheusExporter|prometheus|grafana-server")'
+ssh "$NODE" 'ps -o pid,cmd -p $(pgrep -d, -u $USER -f "j_dpe|PrometheusExporter|prometheus|bin/grafana")'
 
 # SSH tunnel (also printed in monitor-info.txt)
 ssh -N -L 3000:<monitor-node>:3000 -L 9090:<monitor-node>:9090 <user>@perlmutter.nersc.gov

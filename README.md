@@ -207,9 +207,9 @@ wget https://github.com/prometheus/prometheus/releases/download/v${PROM_VER}/pro
 tar xzf prometheus-${PROM_VER}.linux-amd64.tar.gz && mv prometheus-${PROM_VER}.linux-amd64 $HOME/prometheus
 mkdir -p $HOME/prometheus/data
 
-GRAF_VER=11.1.0
+GRAF_VER=13.2.3
 wget https://dl.grafana.com/oss/release/grafana-${GRAF_VER}.linux-amd64.tar.gz
-tar xzf grafana-${GRAF_VER}.linux-amd64.tar.gz && mv grafana-v${GRAF_VER} $HOME/grafana
+tar xzf grafana-${GRAF_VER}.linux-amd64.tar.gz && mv grafana-${GRAF_VER} $HOME/grafana
 mkdir -p $HOME/grafana/{data,logs,plugins}
 
 # Deploy Prometheus scrape config, Grafana config, and ERSAP Overview dashboard
