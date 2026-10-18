@@ -21,7 +21,7 @@ import java.nio.file.Path;
  * JNI and hands each event downstream as {@link EngineDataType#BYTES}
  * (transported as a {@link java.nio.ByteBuffer}).
  *
- * <h3>Java &lt;-&gt; native data flow</h3>
+ * <h2>Java &lt;-&gt; native data flow</h2>
  * <ol>
  *   <li>{@link #createReader(Path, JSONObject)} calls
  *       {@link EjfatNativeReceiver#EjfatNativeReceiver(JSONObject)}, which
@@ -54,7 +54,7 @@ import java.nio.file.Path;
  *       passes it straight through to xMsg without further copies.</li>
  * </ol>
  *
- * <h3>Envelope layout</h3>
+ * <h2>Envelope layout</h2>
  * Matches {@code ejfat_receiver_actor.cpp} exactly, so downstream Java actors
  * see the same bytes whether the upstream source is the C++ ERSAP actor or
  * this Java source engine:
@@ -63,14 +63,14 @@ import java.nio.file.Path;
  *   [ N bytes: reassembled event body                ]
  * </pre>
  *
- * <h3>Native resource ownership</h3>
+ * <h2>Native resource ownership</h2>
  * The native handle is owned by exactly one {@link EjfatNativeReceiver}
  * instance. {@link #closeReader()} calls {@link EjfatNativeReceiver#close()}
  * which invokes {@link #nativeDestroy(long)} exactly once and nulls the
  * handle, so it is safe to call multiple times. The base class calls
  * {@link #closeReader()} on both {@code reset()} and {@code destroy()}.
  *
- * <h3>Configuration (JSON, passed under the standard file-open action)</h3>
+ * <h2>Configuration (JSON, passed under the standard file-open action)</h2>
  * <pre>
  *   {
  *     "action":           "open",
